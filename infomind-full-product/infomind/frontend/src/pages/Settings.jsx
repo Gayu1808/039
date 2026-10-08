@@ -12,6 +12,7 @@ import {
   X,
   Lock
 } from 'lucide-react'
+
 import { useApp } from '../ctx'
 
 const TEAM = [
@@ -98,13 +99,25 @@ function applyTheme(theme) {
 }
 
 export default function Settings() {
-  const { me } = useApp()
+
+  const {
+    me,
+    setDisplayName
+  } = useApp()
+
+  /* =========================================
+     THEME
+     ========================================= */
 
   const [theme, setTheme] = useState(
     localStorage.getItem(
       'infomind-theme'
     ) || 'light'
   )
+
+  /* =========================================
+     NAME
+     ========================================= */
 
   const [name, setName] = useState(
     localStorage.getItem(
@@ -118,6 +131,10 @@ export default function Settings() {
   const [tempName, setTempName] =
     useState(name)
 
+  /* =========================================
+     AI CONFIDENCE
+     ========================================= */
+
   const [confidence, setConfidence] =
     useState(
       Number(
@@ -126,6 +143,10 @@ export default function Settings() {
         )
       ) || 80
     )
+
+  /* =========================================
+     APPLY THEME
+     ========================================= */
 
   useEffect(() => {
     applyTheme(theme)
@@ -136,32 +157,45 @@ export default function Settings() {
     applyTheme(value)
   }
 
-  function saveName() {
-  const cleanName = tempName.trim()
+  /* =========================================
+     SAVE NAME
+     ========================================= */
 
-  if (!cleanName) {
-    return
+  function saveName() {
+    const cleanName =
+      tempName.trim()
+
+    if (!cleanName) {
+      return
+    }
+
+    /* Update Settings page */
+    setName(cleanName)
+
+    /* Save permanently in browser */
+    localStorage.setItem(
+      'infomind-display-name',
+      cleanName
+    )
+
+    /* Update sidebar immediately */
+    setDisplayName(cleanName)
+
+    setEditName(false)
   }
 
-  setName(cleanName)
-
-  localStorage.setItem(
-    'infomind-display-name',
-    cleanName
-  )
-
-  // Tell App.jsx that the profile name changed
-  window.dispatchEvent(
-    new Event('infomind-name-updated')
-  )
-
-  setEditName(false)
-}
+  /* =========================================
+     CANCEL NAME EDIT
+     ========================================= */
 
   function cancelNameEdit() {
     setTempName(name)
     setEditName(false)
   }
+
+  /* =========================================
+     CONFIDENCE
+     ========================================= */
 
   function changeConfidence(value) {
     setConfidence(value)
@@ -175,7 +209,10 @@ export default function Settings() {
   return (
     <div className="space-y-6">
 
-      {/* HEADER */}
+      {/* =====================================
+          HEADER
+          ===================================== */}
+
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
           Settings
@@ -186,7 +223,10 @@ export default function Settings() {
         </p>
       </div>
 
-      {/* USER PROFILE */}
+      {/* =====================================
+          USER PROFILE
+          ===================================== */}
+
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -210,6 +250,7 @@ export default function Settings() {
         <div className="grid md:grid-cols-2 gap-4">
 
           {/* NAME */}
+
           <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
 
             <div className="flex items-center justify-between">
@@ -281,6 +322,7 @@ export default function Settings() {
           </div>
 
           {/* ROLE - LOCKED */}
+
           <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
 
             <div className="flex items-center justify-between">
@@ -310,7 +352,10 @@ export default function Settings() {
 
       </section>
 
-      {/* APPEARANCE */}
+      {/* =====================================
+          APPEARANCE
+          ===================================== */}
+
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -320,6 +365,7 @@ export default function Settings() {
           </div>
 
           <div>
+
             <h2 className="text-lg font-semibold">
               Appearance
             </h2>
@@ -327,6 +373,7 @@ export default function Settings() {
             <p className="mut">
               Choose the look and feel of InfoMind.
             </p>
+
           </div>
 
         </div>
@@ -357,6 +404,7 @@ export default function Settings() {
                   </div>
 
                   <div>
+
                     <div className="font-semibold">
                       {item.name}
                     </div>
@@ -364,6 +412,7 @@ export default function Settings() {
                     <div className="mut text-xs">
                       {item.description}
                     </div>
+
                   </div>
 
                 </div>
@@ -376,7 +425,10 @@ export default function Settings() {
 
       </section>
 
-      {/* AI CONFIDENCE */}
+      {/* =====================================
+          AI CONFIDENCE
+          ===================================== */}
+
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -386,14 +438,15 @@ export default function Settings() {
           </div>
 
           <div>
+
             <h2 className="text-lg font-semibold">
               AI Confidence
             </h2>
 
             <p className="mut">
-              Set the minimum confidence level
-              shown in the interface.
+              Set the minimum confidence level shown in the interface.
             </p>
+
           </div>
 
         </div>
@@ -420,9 +473,7 @@ export default function Settings() {
             value={confidence}
             onChange={event =>
               changeConfidence(
-                Number(
-                  event.target.value
-                )
+                Number(event.target.value)
               )
             }
             className="w-full accent-indigo-600"
@@ -440,16 +491,17 @@ export default function Settings() {
           <b>Note:</b>
 
           <span className="mut ml-1">
-            This controls the confidence threshold
-            displayed by the interface. It does not
-            retrain the underlying AI model.
+            This controls the confidence threshold displayed by the interface. It does not retrain the underlying AI model.
           </span>
 
         </div>
 
       </section>
 
-      {/* OUR TEAM */}
+      {/* =====================================
+          OUR TEAM
+          ===================================== */}
+
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -459,6 +511,7 @@ export default function Settings() {
           </div>
 
           <div>
+
             <h2 className="text-lg font-semibold">
               Our Team
             </h2>
@@ -466,6 +519,7 @@ export default function Settings() {
             <p className="mut">
               InfoMind AI development team
             </p>
+
           </div>
 
         </div>
@@ -474,6 +528,7 @@ export default function Settings() {
 
           {TEAM.map(
             (member, index) => (
+
               <div
                 key={member}
                 className="flex items-center gap-4 rounded-xl bg-slate-100 dark:bg-slate-800 p-4"
@@ -488,6 +543,7 @@ export default function Settings() {
                 </div>
 
               </div>
+
             )
           )}
 
@@ -495,7 +551,10 @@ export default function Settings() {
 
       </section>
 
-      {/* ABOUT */}
+      {/* =====================================
+          ABOUT
+          ===================================== */}
+
       <section className="card">
 
         <div className="flex items-center gap-3 mb-4">
@@ -505,6 +564,7 @@ export default function Settings() {
           </div>
 
           <div>
+
             <h2 className="text-lg font-semibold">
               About InfoMind AI
             </h2>
@@ -512,18 +572,17 @@ export default function Settings() {
             <p className="mut">
               Understand. Connect. Act.
             </p>
+
           </div>
 
         </div>
 
         <p className="mut leading-6">
-          InfoMind AI is an intelligent document
-          intelligence platform designed to analyze,
-          connect, compare and monitor important
-          information across documents.
+          InfoMind AI is an intelligent document intelligence platform designed to analyze, connect, compare and monitor important information across documents.
         </p>
 
         <div className="mt-4 text-sm">
+
           <span className="mut">
             Version
           </span>
@@ -531,6 +590,7 @@ export default function Settings() {
           <span className="font-semibold ml-2">
             1.0
           </span>
+
         </div>
 
       </section>
