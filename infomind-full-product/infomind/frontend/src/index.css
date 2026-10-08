@@ -7,3 +7,40 @@
 .inp{@apply w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500}
 }
 body{@apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans}
+/* InfoMind custom themes */
+
+.theme-indigo {
+  --theme-primary: #4f46e5;
+}
+
+.theme-emerald {
+  --theme-primary: #059669;
+}
+
+.theme-violet {
+  --theme-primary: #7c3aed;
+}
+
+.theme-rose {
+  --theme-primary: #e11d48;
+}
+
+.theme-indigo .btn-p {
+  background-color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.theme-emerald .btn-p {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+.theme-violet .btn-p {
+  background-color: #7c3aed;
+  border-color: #7c3aed;
+}
+
+.theme-rose .btn-p {
+  background-color: #e11d48;
+  border-color: #e11d48;
+}
