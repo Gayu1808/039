@@ -13,7 +13,9 @@ export default function Dashboard() {
   const [d] = useData(() => api('/dashboard')), [f] = useData(() => api('/findings'))
   const M = d && [['Documents', d.documents, 'documents'], ['Critical findings', d.critical, 'attention'], ['Conflicts', d.conflicts, 'attention'], ['Actions completed', d.actions_completed, 'actions'], ['Information health', d.health + '/100', 'insights']]
   return <div className="space-y-6">
-    <div className="flex items-center gap-3 flex-wrap"><div className="flex-1"><h1 className="text-3xl font-bold tracking-tight">Good day, {me.name.split(' ')[0]}</h1>
+    <div className="flex items-center gap-3 flex-wrap"><div className="flex-1"><h1 className="text-3xl font-bold tracking-tight">
+  Good day, {me.role === 'admin' ? 'Admin' : me.name.split(' ')[0]}
+</h1>
       <p className="mut">Here’s what changed and what needs your attention.</p></div><button className="btn btn-p" onClick={() => nav('attention')}>Review changes</button></div>
     <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{M ? M.map(([l, v, to]) => <button key={l} className="card text-left hover:-translate-y-0.5 transition" onClick={() => nav(to)}><div className="mut">{l}</div><div className="text-3xl font-bold">{v}</div></button>) : <div className="col-span-5"><Loading /></div>}</div>
     <div className="grid lg:grid-cols-[1fr_320px] gap-6">
