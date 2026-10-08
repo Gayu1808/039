@@ -62,7 +62,8 @@ const THEMES = [
 ]
 
 function applyTheme(theme) {
-  const root = document.documentElement
+  const root =
+    document.documentElement
 
   root.classList.remove(
     'dark',
@@ -99,41 +100,29 @@ function applyTheme(theme) {
 }
 
 export default function Settings() {
+  const { me } = useApp()
 
-  const {
-    me,
-    setDisplayName
-  } = useApp()
+  const [theme, setTheme] =
+    useState(
+      localStorage.getItem(
+        'infomind-theme'
+      ) || 'light'
+    )
 
-  /* =========================================
-     THEME
-     ========================================= */
-
-  const [theme, setTheme] = useState(
-    localStorage.getItem(
-      'infomind-theme'
-    ) || 'light'
-  )
-
-  /* =========================================
-     NAME
-     ========================================= */
-
-  const [name, setName] = useState(
-    localStorage.getItem(
-      'infomind-display-name'
-    ) || me?.name || ''
-  )
+  const [name, setName] =
+    useState(
+      localStorage.getItem(
+        'infomind-display-name'
+      ) ||
+        me?.name ||
+        ''
+    )
 
   const [editName, setEditName] =
     useState(false)
 
   const [tempName, setTempName] =
     useState(name)
-
-  /* =========================================
-     AI CONFIDENCE
-     ========================================= */
 
   const [confidence, setConfidence] =
     useState(
@@ -145,7 +134,7 @@ export default function Settings() {
     )
 
   /* =========================================
-     APPLY THEME
+     THEME
      ========================================= */
 
   useEffect(() => {
@@ -169,23 +158,26 @@ export default function Settings() {
       return
     }
 
-    /* Update Settings page */
     setName(cleanName)
 
-    /* Save permanently in browser */
     localStorage.setItem(
       'infomind-display-name',
       cleanName
     )
 
-    /* Update sidebar immediately */
-    setDisplayName(cleanName)
+    /*
+      Tell the rest of the application
+      that the profile name changed.
+    */
+    window.dispatchEvent(
+      new Event('infomind-name-updated')
+    )
 
     setEditName(false)
   }
 
   /* =========================================
-     CANCEL NAME EDIT
+     CANCEL NAME
      ========================================= */
 
   function cancelNameEdit() {
@@ -209,11 +201,10 @@ export default function Settings() {
   return (
     <div className="space-y-6">
 
-      {/* =====================================
-          HEADER
-          ===================================== */}
+      {/* HEADER */}
 
       <div>
+
         <h1 className="text-3xl font-bold tracking-tight">
           Settings
         </h1>
@@ -221,11 +212,10 @@ export default function Settings() {
         <p className="mut mt-1">
           Customize your InfoMind AI workspace.
         </p>
+
       </div>
 
-      {/* =====================================
-          USER PROFILE
-          ===================================== */}
+      {/* USER PROFILE */}
 
       <section className="card">
 
@@ -236,6 +226,7 @@ export default function Settings() {
           </div>
 
           <div>
+
             <h2 className="text-lg font-semibold">
               User Profile
             </h2>
@@ -243,6 +234,7 @@ export default function Settings() {
             <p className="mut">
               Manage your profile information.
             </p>
+
           </div>
 
         </div>
@@ -321,7 +313,7 @@ export default function Settings() {
 
           </div>
 
-          {/* ROLE - LOCKED */}
+          {/* ROLE */}
 
           <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
 
@@ -352,9 +344,7 @@ export default function Settings() {
 
       </section>
 
-      {/* =====================================
-          APPEARANCE
-          ===================================== */}
+      {/* APPEARANCE */}
 
       <section className="card">
 
@@ -380,18 +370,21 @@ export default function Settings() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
-          {THEMES.map(item => {
+          {THEMES.map(themeItem => {
 
-            const Icon = item.icon
+            const Icon =
+              themeItem.icon
 
             return (
               <button
-                key={item.id}
+                key={themeItem.id}
                 onClick={() =>
-                  changeTheme(item.id)
+                  changeTheme(
+                    themeItem.id
+                  )
                 }
                 className={`text-left rounded-xl border p-4 transition ${
-                  theme === item.id
+                  theme === themeItem.id
                     ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950'
                     : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400'
                 }`}
@@ -400,17 +393,19 @@ export default function Settings() {
                 <div className="flex items-center gap-3">
 
                   <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-items-center">
+
                     <Icon size={18} />
+
                   </div>
 
                   <div>
 
                     <div className="font-semibold">
-                      {item.name}
+                      {themeItem.name}
                     </div>
 
                     <div className="mut text-xs">
-                      {item.description}
+                      {themeItem.description}
                     </div>
 
                   </div>
@@ -425,9 +420,7 @@ export default function Settings() {
 
       </section>
 
-      {/* =====================================
-          AI CONFIDENCE
-          ===================================== */}
+      {/* AI CONFIDENCE */}
 
       <section className="card">
 
@@ -473,7 +466,9 @@ export default function Settings() {
             value={confidence}
             onChange={event =>
               changeConfidence(
-                Number(event.target.value)
+                Number(
+                  event.target.value
+                )
               )
             }
             className="w-full accent-indigo-600"
@@ -498,9 +493,7 @@ export default function Settings() {
 
       </section>
 
-      {/* =====================================
-          OUR TEAM
-          ===================================== */}
+      {/* OUR TEAM */}
 
       <section className="card">
 
@@ -528,7 +521,6 @@ export default function Settings() {
 
           {TEAM.map(
             (member, index) => (
-
               <div
                 key={member}
                 className="flex items-center gap-4 rounded-xl bg-slate-100 dark:bg-slate-800 p-4"
@@ -543,7 +535,6 @@ export default function Settings() {
                 </div>
 
               </div>
-
             )
           )}
 
@@ -551,9 +542,7 @@ export default function Settings() {
 
       </section>
 
-      {/* =====================================
-          ABOUT
-          ===================================== */}
+      {/* ABOUT */}
 
       <section className="card">
 
