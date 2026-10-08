@@ -11,6 +11,13 @@ import {
 
 import { api } from '../api'
 import { useApp, useData } from '../ctx'
+export default function Dashboard() {
+  const { me, nav } = useApp()
+
+  const displayName =
+    localStorage.getItem('infomind-display-name') ||
+    me?.name ||
+    'User'
 
 export default function Dashboard() {
   const {
