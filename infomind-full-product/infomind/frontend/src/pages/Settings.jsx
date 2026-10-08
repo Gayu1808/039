@@ -137,22 +137,26 @@ export default function Settings() {
   }
 
   function saveName() {
-    const cleanName =
-      tempName.trim()
+  const cleanName = tempName.trim()
 
-    if (!cleanName) {
-      return
-    }
-
-    setName(cleanName)
-
-    localStorage.setItem(
-      'infomind-display-name',
-      cleanName
-    )
-
-    setEditName(false)
+  if (!cleanName) {
+    return
   }
+
+  setName(cleanName)
+
+  localStorage.setItem(
+    'infomind-display-name',
+    cleanName
+  )
+
+  // Tell App.jsx that the profile name changed
+  window.dispatchEvent(
+    new Event('infomind-name-updated')
+  )
+
+  setEditName(false)
+}
 
   function cancelNameEdit() {
     setTempName(name)
