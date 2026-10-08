@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
-import { User, Sun, Moon, Palette, Shield, Users, Info } from 'lucide-react'
+import {
+  User,
+  Sun,
+  Moon,
+  Palette,
+  Shield,
+  Users,
+  Info,
+  Pencil,
+  Check,
+  X,
+  Lock
+} from 'lucide-react'
 import { useApp } from '../ctx'
 
 const TEAM = [
@@ -61,8 +73,22 @@ function applyTheme(theme) {
 
   if (theme === 'dark') {
     root.classList.add('dark')
-  } else if (theme !== 'light') {
-    root.classList.add(`theme-${theme}`)
+  }
+
+  if (theme === 'indigo') {
+    root.classList.add('theme-indigo')
+  }
+
+  if (theme === 'emerald') {
+    root.classList.add('theme-emerald')
+  }
+
+  if (theme === 'violet') {
+    root.classList.add('theme-violet')
+  }
+
+  if (theme === 'rose') {
+    root.classList.add('theme-rose')
   }
 
   localStorage.setItem(
@@ -75,20 +101,30 @@ export default function Settings() {
   const { me } = useApp()
 
   const [theme, setTheme] = useState(
-    () =>
-      localStorage.getItem(
-        'infomind-theme'
-      ) || 'light'
+    localStorage.getItem(
+      'infomind-theme'
+    ) || 'light'
   )
+
+  const [name, setName] = useState(
+    localStorage.getItem(
+      'infomind-display-name'
+    ) || me?.name || ''
+  )
+
+  const [editName, setEditName] =
+    useState(false)
+
+  const [tempName, setTempName] =
+    useState(name)
 
   const [confidence, setConfidence] =
     useState(
-      () =>
-        Number(
-          localStorage.getItem(
-            'infomind-confidence'
-          )
-        ) || 80
+      Number(
+        localStorage.getItem(
+          'infomind-confidence'
+        )
+      ) || 80
     )
 
   useEffect(() => {
@@ -98,6 +134,29 @@ export default function Settings() {
   function changeTheme(value) {
     setTheme(value)
     applyTheme(value)
+  }
+
+  function saveName() {
+    const cleanName =
+      tempName.trim()
+
+    if (!cleanName) {
+      return
+    }
+
+    setName(cleanName)
+
+    localStorage.setItem(
+      'infomind-display-name',
+      cleanName
+    )
+
+    setEditName(false)
+  }
+
+  function cancelNameEdit() {
+    setTempName(name)
+    setEditName(false)
   }
 
   function changeConfidence(value) {
@@ -123,7 +182,7 @@ export default function Settings() {
         </p>
       </div>
 
-      {/* PROFILE */}
+      {/* USER PROFILE */}
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -138,7 +197,7 @@ export default function Settings() {
             </h2>
 
             <p className="mut">
-              Your current InfoMind account
+              Manage your profile information.
             </p>
           </div>
 
@@ -146,24 +205,101 @@ export default function Settings() {
 
         <div className="grid md:grid-cols-2 gap-4">
 
+          {/* NAME */}
           <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
-            <div className="mut">
-              Name
+
+            <div className="flex items-center justify-between">
+
+              <div className="mut">
+                Name
+              </div>
+
+              {!editName && (
+                <button
+                  className="btn !px-2 !py-1 flex items-center gap-1"
+                  onClick={() => {
+                    setTempName(name)
+                    setEditName(true)
+                  }}
+                >
+                  <Pencil size={13} />
+                  Edit
+                </button>
+              )}
+
             </div>
 
-            <div className="font-semibold mt-1">
-              {me?.name || 'User'}
-            </div>
+            {!editName ? (
+
+              <div className="font-semibold mt-2">
+                {name || 'User'}
+              </div>
+
+            ) : (
+
+              <div className="mt-2">
+
+                <input
+                  className="inp"
+                  value={tempName}
+                  onChange={event =>
+                    setTempName(
+                      event.target.value
+                    )
+                  }
+                  autoFocus
+                />
+
+                <div className="flex gap-2 mt-2">
+
+                  <button
+                    className="btn btn-p flex items-center gap-1"
+                    onClick={saveName}
+                  >
+                    <Check size={14} />
+                    Save
+                  </button>
+
+                  <button
+                    className="btn flex items-center gap-1"
+                    onClick={cancelNameEdit}
+                  >
+                    <X size={14} />
+                    Cancel
+                  </button>
+
+                </div>
+
+              </div>
+
+            )}
+
           </div>
 
+          {/* ROLE - LOCKED */}
           <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
-            <div className="mut">
-              Role
+
+            <div className="flex items-center justify-between">
+
+              <div className="mut">
+                Role
+              </div>
+
+              <Lock
+                size={15}
+                className="text-slate-400"
+              />
+
             </div>
 
-            <div className="font-semibold mt-1 capitalize">
+            <div className="font-semibold mt-2 capitalize">
               {me?.role || 'User'}
             </div>
+
+            <p className="text-xs text-slate-500 mt-1">
+              Role is controlled by the administrator.
+            </p>
+
           </div>
 
         </div>
@@ -236,7 +372,7 @@ export default function Settings() {
 
       </section>
 
-      {/* AI SETTINGS */}
+      {/* AI CONFIDENCE */}
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -280,7 +416,9 @@ export default function Settings() {
             value={confidence}
             onChange={event =>
               changeConfidence(
-                Number(event.target.value)
+                Number(
+                  event.target.value
+                )
               )
             }
             className="w-full accent-indigo-600"
@@ -298,17 +436,16 @@ export default function Settings() {
           <b>Note:</b>
 
           <span className="mut ml-1">
-            This setting controls the confidence
-            threshold displayed by the interface.
-            It does not retrain or change the
-            underlying AI model.
+            This controls the confidence threshold
+            displayed by the interface. It does not
+            retrain the underlying AI model.
           </span>
 
         </div>
 
       </section>
 
-      {/* TEAM */}
+      {/* OUR TEAM */}
       <section className="card">
 
         <div className="flex items-center gap-3 mb-5">
@@ -331,24 +468,24 @@ export default function Settings() {
 
         <div className="grid md:grid-cols-2 gap-4">
 
-          {TEAM.map((name, index) => (
+          {TEAM.map(
+            (member, index) => (
+              <div
+                key={member}
+                className="flex items-center gap-4 rounded-xl bg-slate-100 dark:bg-slate-800 p-4"
+              >
 
-            <div
-              key={name}
-              className="flex items-center gap-4 rounded-xl bg-slate-100 dark:bg-slate-800 p-4"
-            >
+                <div className="w-12 h-12 rounded-full bg-indigo-600 text-white grid place-items-center font-bold text-lg shrink-0">
+                  {index + 1}
+                </div>
 
-              <div className="w-12 h-12 rounded-full bg-indigo-600 text-white grid place-items-center font-bold text-lg shrink-0">
-                {index + 1}
+                <div className="font-semibold text-lg">
+                  {member}
+                </div>
+
               </div>
-
-              <div className="font-semibold text-lg">
-                {name}
-              </div>
-
-            </div>
-
-          ))}
+            )
+          )}
 
         </div>
 
