@@ -66,7 +66,10 @@ export default function App() {
   const [authed, setAuthed] = useState(hasToken())
   const [me, setMe] = useState(null)
 
-  /* Editable display name */
+  /* =========================================
+     EDITABLE PROFILE NAME
+     ========================================= */
+
   const [displayName, setDisplayName] = useState(
     localStorage.getItem('infomind-display-name') || ''
   )
@@ -84,7 +87,10 @@ export default function App() {
 
   const toast = useCallback(m => {
     setMsg(m)
-    setTimeout(() => setMsg(''), 2600)
+
+    setTimeout(() => {
+      setMsg('')
+    }, 2600)
   }, [])
 
   const nav = useCallback((p, x = {}) => {
@@ -103,10 +109,6 @@ export default function App() {
         .then(user => {
           setMe(user)
 
-          /*
-           * If there is no locally edited name yet,
-           * use the name received from the backend.
-           */
           const savedName =
             localStorage.getItem(
               'infomind-display-name'
@@ -122,33 +124,6 @@ export default function App() {
         })
     }
   }, [authed])
-
-  /* =========================================
-     LISTEN FOR PROFILE NAME CHANGES
-     ========================================= */
-
-  useEffect(() => {
-    const updateDisplayName = () => {
-      const savedName =
-        localStorage.getItem(
-          'infomind-display-name'
-        ) || ''
-
-      setDisplayName(savedName)
-    }
-
-    window.addEventListener(
-      'infomind-name-updated',
-      updateDisplayName
-    )
-
-    return () => {
-      window.removeEventListener(
-        'infomind-name-updated',
-        updateDisplayName
-      )
-    }
-  }, [])
 
   /* =========================================
      THEME
@@ -168,9 +143,7 @@ export default function App() {
     )
 
     if (theme === 'dark') {
-      document.documentElement.classList.add(
-        'dark'
-      )
+      document.documentElement.classList.add('dark')
     } else if (theme !== 'light') {
       document.documentElement.classList.add(
         `theme-${theme}`
@@ -204,7 +177,7 @@ export default function App() {
   }, [])
 
   /* =========================================
-     AUTH
+     LOGIN
      ========================================= */
 
   if (!authed) {
@@ -215,6 +188,10 @@ export default function App() {
     )
   }
 
+  /* =========================================
+     LOADING
+     ========================================= */
+
   if (!me) {
     return (
       <div className="p-10 mut">
@@ -222,6 +199,10 @@ export default function App() {
       </div>
     )
   }
+
+  /* =========================================
+     PERMISSIONS
+     ========================================= */
 
   const can = p =>
     me.permissions.includes(p)
@@ -234,11 +215,10 @@ export default function App() {
     (NAV.find(n => n[0] === page) ||
       NAV[0])[3]
 
-  /*
-   * Display name priority:
-   * 1. Edited name from Settings
-   * 2. Backend name
-   */
+  /* =========================================
+     FINAL DISPLAY NAME
+     ========================================= */
+
   const sidebarName =
     displayName || me.name || 'User'
 
@@ -251,14 +231,18 @@ export default function App() {
         bump,
         toast,
         nav,
-        params
+        params,
+
+        /* Profile name controls */
+        displayName,
+        setDisplayName
       }}
     >
       <div className="md:grid md:grid-cols-[250px_1fr] min-h-screen">
 
-        {/* =========================================
+        {/* =====================================
             SIDEBAR
-            ========================================= */}
+            ===================================== */}
 
         <aside className="hidden md:flex flex-col gap-1 p-3 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen">
 
@@ -285,9 +269,9 @@ export default function App() {
             )
           )}
 
-          {/* =========================================
+          {/* ===================================
               PROFILE
-              ========================================= */}
+              =================================== */}
 
           <div className="mt-auto card !p-3 text-sm">
 
@@ -319,6 +303,10 @@ export default function App() {
                 setToken(null)
                 setAuthed(false)
                 setMe(null)
+                setDisplayName('')
+                localStorage.removeItem(
+                  'infomind-display-name'
+                )
               }}
             >
               <LogOut size={14} />
@@ -326,13 +314,16 @@ export default function App() {
             </button>
 
           </div>
+
         </aside>
 
-        {/* =========================================
-            MAIN
-            ========================================= */}
+        {/* =====================================
+            MAIN CONTENT
+            ===================================== */}
 
         <div className="min-w-0">
+
+          {/* HEADER */}
 
           <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
 
@@ -351,6 +342,7 @@ export default function App() {
 
             <span className="hidden md:flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-400">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+
               AI monitoring active
             </span>
 
@@ -360,6 +352,8 @@ export default function App() {
 
           </header>
 
+          {/* PAGE */}
+
           <main className="p-4 md:p-6 pb-24 md:pb-6 max-w-7xl mx-auto">
             <Page />
           </main>
@@ -367,9 +361,9 @@ export default function App() {
         </div>
       </div>
 
-      {/* =========================================
-          MOBILE NAV
-          ========================================= */}
+      {/* =====================================
+          MOBILE NAVIGATION
+          ===================================== */}
 
       <nav className="md:hidden fixed bottom-0 inset-x-0 flex justify-around bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-2 z-20">
 
@@ -397,9 +391,9 @@ export default function App() {
 
       </nav>
 
-      {/* =========================================
+      {/* =====================================
           TOAST
-          ========================================= */}
+          ===================================== */}
 
       {msg && (
         <div className="fixed bottom-20 md:bottom-6 right-4 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl shadow-lg z-30">
@@ -407,9 +401,9 @@ export default function App() {
         </div>
       )}
 
-      {/* =========================================
+      {/* =====================================
           COMMAND BAR
-          ========================================= */}
+          ===================================== */}
 
       {pal && (
         <div
