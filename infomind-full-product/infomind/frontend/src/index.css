@@ -1,98 +1,110 @@
-@tailwind base;@tailwind components;@tailwind utilities;
-@layer components{
-.card{@apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm}
-.btn{@apply px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-sm hover:border-indigo-500 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 disabled:opacity-40}
-.btn-p{@apply bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-500}
-.mut{@apply text-sm text-slate-500 dark:text-slate-400}
-.inp{@apply w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500}
-}
-body{@apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans}
-/* Dropdown readability */
-select option {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-.dark select {
-  color-scheme: dark;
-}
-
-.dark select option {
-  background-color: #0f172a;
-  color: #f8fafc;
-}
-
-.dark select option:checked {
-  background-color: #4f46e5;
-  color: #ffffff;
-}
-/* InfoMind custom themes */
-
-.theme-indigo {
-  --theme-primary: #4f46e5;
-}
-
-.theme-emerald {
-  --theme-primary: #059669;
-}
-
-.theme-violet {
-  --theme-primary: #7c3aed;
-}
-
-.theme-rose {
-  --theme-primary: #e11d48;
-}
-
-.theme-indigo .btn-p {
-  background-color: #4f46e5;
-  border-color: #4f46e5;
-}
-
-.theme-emerald .btn-p {
-  background-color: #059669;
-  border-color: #059669;
-}
-
-.theme-violet .btn-p {
-  background-color: #7c3aed;
-  border-color: #7c3aed;
-}
-/* InfoMind Light/Dark Theme */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* =========================================
-   INFOMIND AI - PROFESSIONAL COLOR THEME
+   INFOMIND AI - BASE STYLES
    ========================================= */
 
-/* ---------- LIGHT THEME ---------- */
+@layer components {
+  .card {
+    @apply bg-white dark:bg-slate-900
+      border border-slate-200 dark:border-slate-800
+      rounded-2xl p-5 shadow-sm;
+  }
+
+  .btn {
+    @apply px-3 py-1.5 rounded-lg
+      border border-slate-300 dark:border-slate-700
+      text-sm hover:border-indigo-500
+      transition
+      focus-visible:outline
+      focus-visible:outline-2
+      focus-visible:outline-indigo-500
+      disabled:opacity-40;
+  }
+
+  .btn-p {
+    @apply bg-indigo-600
+      text-white
+      border-indigo-600
+      hover:bg-indigo-500;
+  }
+
+  .mut {
+    @apply text-sm text-slate-500 dark:text-slate-400;
+  }
+
+  .inp {
+    @apply w-full px-3 py-2
+      rounded-lg
+      border border-slate-300 dark:border-slate-700
+      bg-transparent
+      focus-visible:outline
+      focus-visible:outline-2
+      focus-visible:outline-indigo-500;
+  }
+}
+
+/* =========================================
+   BODY
+   ========================================= */
+
+body {
+  @apply bg-slate-50
+    dark:bg-slate-950
+    text-slate-900
+    dark:text-slate-100
+    antialiased
+    font-sans;
+}
+
+/* =========================================
+   LIGHT THEME
+   ========================================= */
 
 html:not(.dark) body {
-  background:
-    radial-gradient(
-      circle at 90% 0%,
-      rgba(99, 102, 241, 0.08),
-      transparent 30%
-    ),
-    #f5f7ff;
-
-  color: #0f172a;
+  background: #f5f7fb;
+  color: #172033;
 }
 
 /* Main content */
+
 html:not(.dark) main {
   background: transparent;
 }
 
-/* Cards */
+/* =========================================
+   LIGHT CARDS
+   ========================================= */
+
 html:not(.dark) .card {
   background: #ffffff;
-  color: #0f172a;
-  border-color: #dbe3f0;
+  color: #172033;
+  border-color: #e2e8f0;
+
   box-shadow:
-    0 4px 18px rgba(30, 41, 59, 0.06);
+    0 4px 16px rgba(15, 23, 42, 0.05);
 }
 
-/* Primary buttons */
+/* =========================================
+   LIGHT INPUTS
+   ========================================= */
+
+html:not(.dark) .inp {
+  background: #ffffff;
+  color: #172033;
+  border-color: #cbd5e1;
+}
+
+html:not(.dark) .inp:focus {
+  border-color: #6366f1;
+}
+
+/* =========================================
+   LIGHT PRIMARY BUTTON
+   ========================================= */
+
 html:not(.dark) .btn-p {
   background: #4f46e5;
   border-color: #4f46e5;
@@ -104,95 +116,109 @@ html:not(.dark) .btn-p:hover {
   border-color: #4338ca;
 }
 
-/* Input fields */
-html:not(.dark) .inp {
-  background: #ffffff;
-  color: #0f172a;
-  border-color: #cbd5e1;
+/* =========================================
+   LIGHT SIDEBAR
+   ========================================= */
+
+html:not(.dark) aside {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #172033;
 }
 
-/* Selected navigation */
-html:not(.dark)
-  aside
-  button[aria-current="page"] {
+/* Sidebar navigation */
+
+html:not(.dark) aside button {
+  color: #64748b;
+}
+
+/* Sidebar hover */
+
+html:not(.dark) aside button:hover {
+  background: #f1f5ff;
+  color: #4f46e5;
+}
+
+/* =========================================
+   ACTIVE SIDEBAR ITEM
+   ========================================= */
+
+/*
+   App.jsx currently gives the active button:
+   bg-indigo-50
+*/
+
+html:not(.dark) aside button.bg-indigo-50 {
   background: linear-gradient(
     135deg,
     #eef2ff,
     #e0e7ff
-  );
-
-  color: #4338ca;
-}
-
-/* Sidebar */
-html:not(.dark) aside {
-  background: #111827 !important;
-  border-color: #1f2937 !important;
-  color: #e5e7eb;
-}
-
-/* Sidebar text */
-html:not(.dark) aside button {
-  color: #94a3b8;
-}
-
-html:not(.dark) aside button:hover {
-  background: #1e293b;
-  color: #e2e8f0;
-}
-
-html:not(.dark)
-  aside
-  button[aria-current="page"] {
-  background: linear-gradient(
-    135deg,
-    #312e81,
-    #4338ca
-  );
-
-  color: #ffffff;
-}
-
-/* Sidebar profile */
-html:not(.dark) aside .card {
-  background: #172033 !important;
-  border-color: #26334a !important;
-  color: #f8fafc;
-}
-
-/* Header */
-html:not(.dark) header {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.92
   ) !important;
 
+  color: #4338ca !important;
+
+  font-weight: 600;
+}
+
+/* =========================================
+   LIGHT SIDEBAR PROFILE
+   ========================================= */
+
+html:not(.dark) aside .card {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #172033;
+
+  box-shadow:
+    0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+/* Sidebar divider */
+
+html:not(.dark) aside .h-px {
+  background: #e2e8f0;
+}
+
+/* =========================================
+   LIGHT HEADER
+   ========================================= */
+
+html:not(.dark) header {
+  background: rgba(255, 255, 255, 0.95) !important;
   border-color: #e2e8f0 !important;
 }
 
 /* Search bar */
+
 html:not(.dark) header button {
-  background: #eef2ff;
+  background: #f1f5f9;
   color: #64748b;
 }
 
-/* ---------- DARK THEME ---------- */
+html:not(.dark) header button:hover {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+/* =========================================
+   LIGHT TEXT
+   ========================================= */
+
+html:not(.dark) .mut {
+  color: #64748b;
+}
+
+/* =========================================
+   DARK THEME
+   ========================================= */
 
 html.dark body {
-  background:
-    radial-gradient(
-      circle at 80% 0%,
-      rgba(79, 70, 229, 0.15),
-      transparent 32%
-    ),
-    #020617;
-
+  background: #020617;
   color: #f8fafc;
 }
 
 /* Dark cards */
+
 html.dark .card {
   background: #0f172a;
   color: #f8fafc;
@@ -202,18 +228,20 @@ html.dark .card {
     0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
-/* Dark primary button */
+/* Dark buttons */
+
 html.dark .btn-p {
   background: #6366f1;
   border-color: #6366f1;
-  color: white;
+  color: #ffffff;
 }
 
 html.dark .btn-p:hover {
   background: #818cf8;
 }
 
-/* Dark input */
+/* Dark inputs */
+
 html.dark .inp {
   background: #0f172a;
   color: #f8fafc;
@@ -221,93 +249,95 @@ html.dark .inp {
 }
 
 /* Dark sidebar */
+
 html.dark aside {
   background: #0b1120 !important;
   border-color: #1e293b !important;
 }
 
-/* Dark sidebar selected item */
-html.dark
-  aside
-  button[aria-current="page"] {
+/* Dark sidebar text */
+
+html.dark aside button {
+  color: #94a3b8;
+}
+
+html.dark aside button:hover {
+  background: #172033;
+  color: #e2e8f0;
+}
+
+/* Dark active item */
+
+html.dark aside button.bg-indigo-50 {
   background: linear-gradient(
     135deg,
     #312e81,
     #4338ca
-  );
+  ) !important;
 
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
-/* Dark profile card */
+/* Dark profile */
+
 html.dark aside .card {
   background: #111827 !important;
   border-color: #26334a !important;
 }
 
-/* ---------- THEME COLORS ---------- */
+/* =========================================
+   CUSTOM THEMES
+   ========================================= */
 
-/* Indigo */
 .theme-indigo .btn-p {
   background: #4f46e5;
   border-color: #4f46e5;
 }
 
+.theme-indigo aside button.bg-indigo-50 {
+  background: #eef2ff !important;
+  color: #4338ca !important;
+}
+
 /* Emerald */
+
 .theme-emerald .btn-p {
   background: #059669;
   border-color: #059669;
 }
 
-.theme-emerald
-  aside
-  button[aria-current="page"] {
-  background: linear-gradient(
-    135deg,
-    #065f46,
-    #059669
-  );
-
-  color: white;
+.theme-emerald aside button.bg-indigo-50 {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
 }
 
 /* Violet */
+
 .theme-violet .btn-p {
   background: #7c3aed;
   border-color: #7c3aed;
 }
 
-.theme-violet
-  aside
-  button[aria-current="page"] {
-  background: linear-gradient(
-    135deg,
-    #5b21b6,
-    #7c3aed
-  );
-
-  color: white;
+.theme-violet aside button.bg-indigo-50 {
+  background: #f5f3ff !important;
+  color: #6d28d9 !important;
 }
 
 /* Rose */
+
 .theme-rose .btn-p {
   background: #e11d48;
   border-color: #e11d48;
 }
 
-.theme-rose
-  aside
-  button[aria-current="page"] {
-  background: linear-gradient(
-    135deg,
-    #9f1239,
-    #e11d48
-  );
-
-  color: white;
+.theme-rose aside button.bg-indigo-50 {
+  background: #fff1f2 !important;
+  color: #be123c !important;
 }
 
-/* ---------- DROPDOWN READABILITY ---------- */
+/* =========================================
+   DROPDOWN READABILITY
+   ========================================= */
 
 select option {
   background: #ffffff;
@@ -328,7 +358,18 @@ select option {
   color: #ffffff;
 }
 
-/* ---------- SMOOTH TRANSITIONS ---------- */
+/* =========================================
+   MOBILE BOTTOM NAV
+   ========================================= */
+
+html:not(.dark) nav {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+/* =========================================
+   SMOOTH TRANSITIONS
+   ========================================= */
 
 body,
 .card,
@@ -342,6 +383,4 @@ select {
     color 0.25s ease,
     border-color 0.25s ease,
     box-shadow 0.25s ease;
-}
-  border-color: #e11d48;
 }
