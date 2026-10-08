@@ -1,879 +1,799 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts'
+  Network,
+  Search,
+  RefreshCw,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  FileText,
+  AlertTriangle,
+  Link2,
+  CheckCircle2,
+  X
+} from 'lucide-react'
 
 import { api } from '../api'
-import { useData } from '../ctx'
-import { Loading } from '../components'
+import { useApp, useData } from '../ctx'
 
-const COLORS = {
-  CRITICAL: '#dc2626',
-  HIGH: '#ea580c',
-  MEDIUM: '#d97706',
-  LOW: '#64748b'
+function Stat({ label, value, icon: Icon }) {
+  return (
+    <div className="card">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="mut">{label}</div>
+          <div className="text-2xl font-bold mt-1">
+            {value}
+          </div>
+        </div>
+
+        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+          <Icon size={19} />
+        </div>
+      </div>
+    </div>
+  )
 }
 
-const ACTION_COLORS = [
-  '#4f46e5',
-  '#0891b2',
-  '#16a34a',
-  '#dc2626'
-]
+function NodeCard({ node, onClick }) {
+  const type = String(
+    node?.type ||
+    node?.kind ||
+    'document'
+  ).toLowerCase()
 
-function toChartData(value) {
-  if (!value || typeof value !== 'object') {
-    return []
-  }
+  const label =
+    node?.label ||
+    node?.name ||
+    node?.title ||
+    'Unknown'
 
-  return Object.entries(value).map(([name, value]) => ({
-    name,
-    value: Number(value) || 0
-  }))
-}
+  return (
+    <button
+      onClick={() => onClick(node)}
+      className="absolute -translate-x-1/2 -translate-y-1/2 w-32 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-md p-3 text-left hover:border-indigo-500 hover:shadow-lg transition"
+      style={{
+        left: `${node.x}%`,
+        top: `${node.y}%`
+      }}
+    >
+      <div className="flex items-center gap-2">
 
-function getPosition(index, total) {
-  const angle =
-    (2 * Math.PI * index) / Math.max(total, 1) - Math.PI / 2
+        <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 grid place-items-center shrink-0">
+          {type.includes('finding') ||
+          type.includes('risk') ? (
+            <AlertTriangle size={14} />
+          ) : (
+            <FileText size={14} />
+          )}
+        </div>
 
-  const centerX = 180
-  const centerY = 170
-  const radiusX = 130
-  const radiusY = 120
+        <div className="min-w-0">
+          <div className="text-xs font-semibold truncate">
+            {label}
+          </div>
 
-  return {
-    x: centerX + radiusX * Math.cos(angle),
-    y: centerY + radiusY * Math.sin(angle)
-  }
+          <div className="text-[10px] text-slate-500 capitalize">
+            {type}
+          </div>
+        </div>
+
+      </div>
+    </button>
+  )
 }
 
 export default function Insights() {
-  const [ins, insError] = useData(() => api('/insights'))
-  const [graph, graphError] = useData(() => api('/graph'))
+  const { toast } = useApp()
+
+  const [insights, loadingInsights, errorInsights, reloadInsights] =
+    useData(() => api('/insights'))
+
+  const [graph, loadingGraph, errorGraph, reloadGraph] =
+    useData(() => api('/graph'))
+
+  const [search, setSearch] = useState('')
 
   const [selected, setSelected] = useState(null)
-  const [search, setSearch] = useState('')
-  const [showConflicts, setShowConflicts] = useState(true)
+
   const [zoom, setZoom] = useState(1)
 
-  /*
-   * Loading
-   */
-  if (!ins || !graph) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Connections
-        </h1>
+  const [showConflicts, setShowConflicts] =
+    useState(false)
 
-        <Loading />
-      </div>
-    )
-  }
+  const nodes = useMemo(() => {
+    const raw = Array.isArray(graph?.nodes)
+      ? graph.nodes
+      : []
 
-  /*
-   * Safe graph data
-   */
-  const nodes = Array.isArray(graph.nodes)
-    ? graph.nodes
-    : []
+    return raw.map((node, index) => {
 
-  const edges = Array.isArray(graph.edges)
+      const angle =
+        (index / Math.max(raw.length, 1)) *
+        Math.PI *
+        2
+
+      const radius =
+        raw.length <= 1
+          ? 0
+          : 30
+
+      return {
+        ...node,
+        x:
+          node?.x ??
+          50 + Math.cos(angle) * radius,
+        y:
+          node?.y ??
+          50 + Math.sin(angle) * radius
+      }
+    })
+  }, [graph])
+
+  const edges = Array.isArray(graph?.edges)
     ? graph.edges
     : []
 
-  /*
-   * Safe insights data
-   */
-  const severityData = toChartData(
-    ins.by_severity
-  )
+  const filteredNodes = useMemo(() => {
 
-  const kindData = toChartData(
-    ins.by_kind
-  )
+    let result = nodes
 
-  const actionData = toChartData(
-    ins.actions
-  )
+    if (showConflicts) {
+      result = result.filter(node => {
 
-  /*
-   * Search
-   */
-  const searchText = search
-    .trim()
-    .toLowerCase()
+        const type = String(
+          node?.type ||
+          node?.kind ||
+          ''
+        ).toLowerCase()
 
-  const filteredNodes = nodes.filter(node => {
-    const id = String(node.id || '').toLowerCase()
-
-    return id.includes(searchText)
-  })
-
-  /*
-   * Filter graph edges
-   */
-  const filteredEdges = edges.filter(edge => {
-    if (!showConflicts && edge.conflict) {
-      return false
+        return (
+          type.includes('finding') ||
+          type.includes('conflict') ||
+          type.includes('risk')
+        )
+      })
     }
 
-    if (!searchText) {
+    if (search.trim()) {
+
+      const q = search.toLowerCase()
+
+      result = result.filter(node => {
+
+        const text = [
+          node?.label,
+          node?.name,
+          node?.title,
+          node?.type,
+          node?.kind
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+
+        return text.includes(q)
+      })
+    }
+
+    return result
+  }, [
+    nodes,
+    search,
+    showConflicts
+  ])
+
+  const visibleNodeIds = new Set(
+    filteredNodes.map(
+      node => String(
+        node?.id ||
+        node?.node_id
+      )
+    )
+  )
+
+  const filteredEdges = edges.filter(edge => {
+
+    if (!showConflicts && search.trim() === '') {
       return true
     }
 
-    const a = String(edge.a || '').toLowerCase()
-    const b = String(edge.b || '').toLowerCase()
+    const source = String(
+      edge?.source ||
+      edge?.from ||
+      ''
+    )
+
+    const target = String(
+      edge?.target ||
+      edge?.to ||
+      ''
+    )
 
     return (
-      a.includes(searchText) ||
-      b.includes(searchText)
+      visibleNodeIds.has(source) ||
+      visibleNodeIds.has(target)
     )
   })
 
-  /*
-   * Selected document connections
-   */
-  const selectedLinks = selected
-    ? edges.filter(
-        edge =>
-          edge.a === selected ||
-          edge.b === selected
-      )
-    : []
+  const summary = insights || {}
 
-  /*
-   * Graph positions
-   */
-  const positions = {}
+  const documentCount =
+    summary?.documents ??
+    summary?.document_count ??
+    nodes.filter(node =>
+      String(
+        node?.type ||
+        node?.kind ||
+        ''
+      ).toLowerCase() === 'document'
+    ).length
 
-  nodes.forEach((node, index) => {
-    positions[node.id] = getPosition(
-      index,
-      nodes.length
-    )
-  })
+  const connectionCount =
+    summary?.connections ??
+    summary?.relationships ??
+    edges.length
 
-  /*
-   * API errors
-   */
-  const hasError =
-    insError ||
-    graphError
+  const findingCount =
+    summary?.findings ??
+    summary?.finding_count ??
+    nodes.filter(node =>
+      String(
+        node?.type ||
+        node?.kind ||
+        ''
+      ).toLowerCase().includes('finding')
+    ).length
+
+  function refresh() {
+    reloadInsights()
+    reloadGraph()
+    toast('Connections refreshed.')
+  }
+
+  function resetZoom() {
+    setZoom(1)
+  }
 
   return (
     <div className="space-y-6">
 
       {/* HEADER */}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+
+      <section>
+
+        <div className="flex items-center gap-2 text-indigo-600 text-sm font-semibold">
+          <Network size={17} />
+          Knowledge Intelligence
+        </div>
+
+        <h1 className="text-2xl md:text-3xl font-bold mt-1">
           Connections
         </h1>
 
-        <p className="mut mt-1">
-          Explore how your documents are connected
-          and identify relationships and conflicts.
+        <p className="mut mt-2 max-w-2xl">
+          Explore how documents, findings and organizational
+          information are connected.
         </p>
+
+      </section>
+
+      {/* STATS */}
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+        <Stat
+          label="Documents"
+          value={documentCount}
+          icon={FileText}
+        />
+
+        <Stat
+          label="Connections"
+          value={connectionCount}
+          icon={Link2}
+        />
+
+        <Stat
+          label="Findings"
+          value={findingCount}
+          icon={AlertTriangle}
+        />
+
       </div>
 
-      {/* ERROR MESSAGE */}
-      {hasError && (
-        <div className="card border-red-300 dark:border-red-900">
-          <h2 className="font-semibold text-red-600 dark:text-red-400">
-            Some information could not be loaded
-          </h2>
+      {/* SEARCH + CONTROLS */}
 
-          <p className="mut mt-1">
-            The connection graph is still available,
-            but some analytics may be unavailable.
-          </p>
+      <section className="card !p-3">
+
+        <div className="flex flex-col lg:flex-row gap-3">
+
+          <div className="flex items-center gap-2 flex-1 px-3">
+
+            <Search
+              size={17}
+              className="text-slate-400"
+            />
+
+            <input
+              value={search}
+              onChange={e =>
+                setSearch(e.target.value)
+              }
+              className="w-full bg-transparent outline-none text-sm"
+              placeholder="Search connected information..."
+            />
+
+          </div>
+
+          <div className="flex items-center gap-2">
+
+            <button
+              className={`btn ${
+                showConflicts
+                  ? 'btn-p'
+                  : ''
+              }`}
+              onClick={() =>
+                setShowConflicts(
+                  value => !value
+                )
+              }
+            >
+              <AlertTriangle
+                size={14}
+                className="inline mr-1"
+              />
+              Findings only
+            </button>
+
+            <button
+              className="btn !p-2"
+              onClick={() =>
+                setZoom(
+                  value =>
+                    Math.min(
+                      value + 0.2,
+                      2
+                    )
+                )
+              }
+              title="Zoom in"
+            >
+              <ZoomIn size={16} />
+            </button>
+
+            <button
+              className="btn !p-2"
+              onClick={() =>
+                setZoom(
+                  value =>
+                    Math.max(
+                      value - 0.2,
+                      0.6
+                    )
+                )
+              }
+              title="Zoom out"
+            >
+              <ZoomOut size={16} />
+            </button>
+
+            <button
+              className="btn !p-2"
+              onClick={resetZoom}
+              title="Reset zoom"
+            >
+              <RotateCcw size={16} />
+            </button>
+
+            <button
+              className="btn !p-2"
+              onClick={refresh}
+              title="Refresh"
+            >
+              <RefreshCw
+                size={16}
+                className={
+                  loadingGraph ||
+                  loadingInsights
+                    ? 'animate-spin'
+                    : ''
+                }
+              />
+            </button>
+
+          </div>
+
         </div>
+
+      </section>
+
+      {/* GRAPH */}
+
+      <section className="card !p-0 overflow-hidden">
+
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
+
+          <div className="flex items-center justify-between">
+
+            <div>
+
+              <h2 className="font-semibold">
+                Organizational knowledge graph
+              </h2>
+
+              <p className="mut mt-1">
+                Select a node to inspect its information.
+              </p>
+
+            </div>
+
+            <div className="hidden sm:flex items-center gap-3 text-xs text-slate-500">
+
+              <span className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                Information
+              </span>
+
+              <span className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                Finding
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+        <div className="relative h-[560px] overflow-hidden bg-slate-50 dark:bg-slate-950">
+
+          {(loadingGraph ||
+            loadingInsights) && (
+            <div className="absolute inset-0 z-20 grid place-items-center bg-white/70 dark:bg-slate-950/70 backdrop-blur-sm">
+
+              <div className="flex items-center gap-2">
+
+                <RefreshCw
+                  size={18}
+                  className="animate-spin text-indigo-600"
+                />
+
+                <span className="mut">
+                  Building knowledge graph...
+                </span>
+
+              </div>
+
+            </div>
+          )}
+
+          {(errorGraph ||
+            errorInsights) && (
+            <div className="absolute top-4 left-4 right-4 z-20 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-900 p-3 text-sm text-red-700 dark:text-red-300">
+              Connection data could not be fully loaded.
+            </div>
+          )}
+
+          {filteredNodes.length === 0 ? (
+
+            <div className="absolute inset-0 grid place-items-center">
+
+              <div className="text-center">
+
+                <Network
+                  size={40}
+                  className="mx-auto text-slate-400"
+                />
+
+                <h3 className="font-semibold mt-4">
+                  No connections found
+                </h3>
+
+                <p className="mut mt-1">
+                  Upload documents or change your search filter.
+                </p>
+
+              </div>
+
+            </div>
+
+          ) : (
+
+            <div
+              className="absolute inset-0 origin-center transition-transform duration-200"
+              style={{
+                transform: `scale(${zoom})`
+              }}
+            >
+
+              {/* CONNECTION LINES */}
+
+              <svg
+                className="absolute inset-0 w-full h-full pointer-events-none"
+              >
+
+                {filteredEdges.map(
+                  (edge, index) => {
+
+                    const sourceId =
+                      String(
+                        edge?.source ||
+                        edge?.from ||
+                        ''
+                      )
+
+                    const targetId =
+                      String(
+                        edge?.target ||
+                        edge?.to ||
+                        ''
+                      )
+
+                    const source =
+                      filteredNodes.find(
+                        node =>
+                          String(
+                            node?.id ||
+                            node?.node_id
+                          ) === sourceId
+                      )
+
+                    const target =
+                      filteredNodes.find(
+                        node =>
+                          String(
+                            node?.id ||
+                            node?.node_id
+                          ) === targetId
+                      )
+
+                    if (!source || !target) {
+                      return null
+                    }
+
+                    return (
+                      <line
+                        key={index}
+                        x1={`${source.x}%`}
+                        y1={`${source.y}%`}
+                        x2={`${target.x}%`}
+                        y2={`${target.y}%`}
+                        stroke="currentColor"
+                        className="text-slate-300 dark:text-slate-700"
+                        strokeWidth="2"
+                      />
+                    )
+                  }
+                )}
+
+              </svg>
+
+              {/* NODES */}
+
+              {filteredNodes.map(
+                (node, index) => (
+                  <NodeCard
+                    key={
+                      node?.id ||
+                      node?.node_id ||
+                      index
+                    }
+                    node={node}
+                    onClick={setSelected}
+                  />
+                )
+              )}
+
+            </div>
+          )}
+
+        </div>
+
+      </section>
+
+      {/* SELECTED NODE */}
+
+      {selected && (
+
+        <section className="card">
+
+          <div className="flex items-start justify-between gap-4">
+
+            <div className="flex items-center gap-3">
+
+              <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+
+                {String(
+                  selected?.type ||
+                  selected?.kind ||
+                  ''
+                )
+                  .toLowerCase()
+                  .includes('finding') ? (
+                  <AlertTriangle size={20} />
+                ) : (
+                  <FileText size={20} />
+                )}
+
+              </div>
+
+              <div>
+
+                <h2 className="font-semibold">
+                  {selected?.label ||
+                    selected?.name ||
+                    selected?.title ||
+                    'Selected information'}
+                </h2>
+
+                <p className="mut capitalize">
+                  {selected?.type ||
+                    selected?.kind ||
+                    'Information'}
+                </p>
+
+              </div>
+
+            </div>
+
+            <button
+              className="btn !p-2"
+              onClick={() =>
+                setSelected(null)
+              }
+            >
+              <X size={16} />
+            </button>
+
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-4">
+
+              <div className="mut">
+                Identifier
+              </div>
+
+              <div className="font-semibold mt-1 break-all">
+                {selected?.id ||
+                  selected?.node_id ||
+                  '—'}
+              </div>
+
+            </div>
+
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-4">
+
+              <div className="mut">
+                Type
+              </div>
+
+              <div className="font-semibold mt-1 capitalize">
+                {selected?.type ||
+                  selected?.kind ||
+                  'Information'}
+              </div>
+
+            </div>
+
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800 p-4">
+
+              <div className="mut">
+                Relationships
+              </div>
+
+              <div className="font-semibold mt-1">
+                {edges.filter(edge =>
+                  String(
+                    edge?.source ||
+                    edge?.from ||
+                    ''
+                  ) ===
+                    String(
+                      selected?.id ||
+                      selected?.node_id
+                    ) ||
+                  String(
+                    edge?.target ||
+                    edge?.to ||
+                    ''
+                  ) ===
+                    String(
+                      selected?.id ||
+                      selected?.node_id
+                    )
+                ).length}
+              </div>
+
+            </div>
+
+          </div>
+
+          {selected?.description && (
+            <div className="mt-5">
+
+              <h3 className="font-semibold">
+                Description
+              </h3>
+
+              <p className="mut mt-2 leading-6">
+                {selected.description}
+              </p>
+
+            </div>
+          )}
+
+        </section>
+
       )}
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* INSIGHT CARDS */}
 
-        <div className="card">
-          <div className="mut">
-            Documents
-          </div>
+      <section>
 
-          <div className="text-3xl font-bold mt-1">
-            {nodes.length}
-          </div>
-        </div>
+        <h2 className="font-semibold text-lg">
+          What the graph helps you discover
+        </h2>
 
-        <div className="card">
-          <div className="mut">
-            Connections
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
 
-          <div className="text-3xl font-bold mt-1">
-            {edges.length}
-          </div>
-        </div>
+          <div className="card">
 
-        <div className="card">
-          <div className="mut">
-            Conflicts
-          </div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+              <Link2 size={19} />
+            </div>
 
-          <div className="text-3xl font-bold mt-1 text-red-600">
-            {
-              edges.filter(
-                edge => edge.conflict
-              ).length
-            }
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="mut">
-            Selected
-          </div>
-
-          <div className="text-lg font-semibold mt-2 truncate">
-            {selected || 'None'}
-          </div>
-        </div>
-
-      </div>
-
-      {/* ANALYTICS */}
-      <div className="grid md:grid-cols-3 gap-4">
-
-        {/* SEVERITY */}
-        <div className="card">
-
-          <h2 className="font-semibold">
-            Open findings by severity
-          </h2>
-
-          <div className="h-52 mt-3">
-
-            {severityData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={severityData}>
-
-                  <XAxis
-                    dataKey="name"
-                    fontSize={11}
-                  />
-
-                  <YAxis
-                    allowDecimals={false}
-                    fontSize={11}
-                  />
-
-                  <Tooltip />
-
-                  <Bar
-                    dataKey="value"
-                    radius={6}
-                  >
-                    {severityData.map(item => (
-                      <Cell
-                        key={item.name}
-                        fill={
-                          COLORS[item.name] ||
-                          '#6366f1'
-                        }
-                      />
-                    ))}
-                  </Bar>
-
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full grid place-items-center mut">
-                No severity data
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        {/* FINDING TYPES */}
-        <div className="card">
-
-          <h2 className="font-semibold">
-            Findings by type
-          </h2>
-
-          <div className="h-52 mt-3">
-
-            {kindData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={kindData}>
-
-                  <XAxis
-                    dataKey="name"
-                    fontSize={11}
-                  />
-
-                  <YAxis
-                    allowDecimals={false}
-                    fontSize={11}
-                  />
-
-                  <Tooltip />
-
-                  <Bar
-                    dataKey="value"
-                    fill="#4f46e5"
-                    radius={6}
-                  />
-
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full grid place-items-center mut">
-                No finding type data
-              </div>
-            )}
-
-          </div>
-        </div>
-
-        {/* ACTION STATUS */}
-        <div className="card">
-
-          <h2 className="font-semibold">
-            Action status
-          </h2>
-
-          <div className="h-52 mt-3">
-
-            {actionData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-
-                  <Pie
-                    data={actionData}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={70}
-                    label
-                  >
-                    {actionData.map(
-                      (item, index) => (
-                        <Cell
-                          key={item.name}
-                          fill={
-                            ACTION_COLORS[
-                              index %
-                                ACTION_COLORS.length
-                            ]
-                          }
-                        />
-                      )
-                    )}
-                  </Pie>
-
-                  <Tooltip />
-
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-full grid place-items-center mut">
-                No action data
-              </div>
-            )}
-
-          </div>
-        </div>
-
-      </div>
-
-      {/* CONNECTION GRAPH */}
-      <div className="card">
-
-        {/* GRAPH HEADER */}
-        <div className="flex items-center gap-3 flex-wrap">
-
-          <div className="flex-1">
-
-            <h2 className="text-xl font-semibold">
-              Document Connection Graph
-            </h2>
+            <h3 className="font-semibold mt-4">
+              Hidden relationships
+            </h3>
 
             <p className="mut mt-1">
-              Click a document to see its
-              relationships.
+              Discover how information from different
+              documents relates to each other.
             </p>
 
           </div>
 
-          <div className="flex gap-2">
+          <div className="card">
 
-            <span className="text-xs px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
-              {nodes.length} documents
-            </span>
+            <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950 text-red-600 grid place-items-center">
+              <AlertTriangle size={19} />
+            </div>
 
-            <span className="text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
-              {edges.length} connections
-            </span>
+            <h3 className="font-semibold mt-4">
+              Risk connections
+            </h3>
+
+            <p className="mut mt-1">
+              Identify findings that are connected to
+              important organizational information.
+            </p>
+
+          </div>
+
+          <div className="card">
+
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 grid place-items-center">
+              <CheckCircle2 size={19} />
+            </div>
+
+            <h3 className="font-semibold mt-4">
+              Knowledge structure
+            </h3>
+
+            <p className="mut mt-1">
+              Build a visual understanding of how your
+              organizational knowledge fits together.
+            </p>
 
           </div>
 
         </div>
 
-        {/* CONTROLS */}
-        <div className="flex gap-2 flex-wrap mt-5">
-
-          <input
-            className="inp max-w-sm"
-            placeholder="Search documents..."
-            value={search}
-            onChange={event =>
-              setSearch(event.target.value)
-            }
-          />
-
-          <button
-            className="btn"
-            onClick={() =>
-              setZoom(
-                value =>
-                  Math.min(
-                    value + 0.2,
-                    2
-                  )
-              )
-            }
-          >
-            +
-          </button>
-
-          <button
-            className="btn"
-            onClick={() =>
-              setZoom(
-                value =>
-                  Math.max(
-                    value - 0.2,
-                    0.6
-                  )
-              )
-            }
-          >
-            −
-          </button>
-
-          <button
-            className="btn"
-            onClick={() =>
-              setZoom(1)
-            }
-          >
-            Reset
-          </button>
-
-          <button
-            className={`btn ${
-              showConflicts
-                ? 'btn-p'
-                : ''
-            }`}
-            onClick={() =>
-              setShowConflicts(
-                value => !value
-              )
-            }
-          >
-            {showConflicts
-              ? 'Hide conflicts'
-              : 'Show conflicts'}
-          </button>
-
-        </div>
-
-        {/* GRAPH AREA */}
-        <div className="grid lg:grid-cols-[500px_1fr] gap-6 mt-5">
-
-          {/* SVG GRAPH */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-hidden">
-
-            {nodes.length === 0 ? (
-
-              <div className="min-h-[360px] grid place-items-center p-8 text-center">
-
-                <div>
-
-                  <div className="text-5xl mb-4">
-                    🔗
-                  </div>
-
-                  <h3 className="font-semibold text-lg">
-                    No document connections yet
-                  </h3>
-
-                  <p className="mut mt-2">
-                    There are currently no
-                    documents available for
-                    the connection graph.
-                  </p>
-
-                </div>
-
-              </div>
-
-            ) : (
-
-              <svg
-                viewBox="0 0 360 340"
-                className="w-full min-h-[360px]"
-                role="img"
-                aria-label="Document connection graph"
-              >
-
-                <g
-                  transform={`
-                    translate(
-                      ${180 - 180 * zoom}
-                      ${170 - 170 * zoom}
-                    )
-                    scale(${zoom})
-                  `}
-                >
-
-                  {/* EDGES */}
-                  {filteredEdges.map(
-                    (edge, index) => {
-
-                      const start =
-                        positions[edge.a]
-
-                      const end =
-                        positions[edge.b]
-
-                      if (
-                        !start ||
-                        !end
-                      ) {
-                        return null
-                      }
-
-                      return (
-                        <line
-                          key={index}
-                          x1={start.x}
-                          y1={start.y}
-                          x2={end.x}
-                          y2={end.y}
-                          stroke={
-                            edge.conflict
-                              ? '#dc2626'
-                              : '#6366f1'
-                          }
-                          strokeWidth={
-                            edge.conflict
-                              ? 3
-                              : 1.5
-                          }
-                          strokeDasharray={
-                            edge.type ===
-                            'version'
-                              ? '6 4'
-                              : undefined
-                          }
-                        />
-                      )
-                    }
-                  )}
-
-                  {/* NODES */}
-                  {filteredNodes.map(
-                    node => {
-
-                      const position =
-                        positions[node.id]
-
-                      if (!position) {
-                        return null
-                      }
-
-                      const isSelected =
-                        selected ===
-                        node.id
-
-                      return (
-                        <g
-                          key={node.id}
-                          role="button"
-                          tabIndex={0}
-                          className="cursor-pointer"
-                          onClick={() =>
-                            setSelected(
-                              node.id
-                            )
-                          }
-                          onKeyDown={
-                            event => {
-                              if (
-                                event.key ===
-                                'Enter'
-                              ) {
-                                setSelected(
-                                  node.id
-                                )
-                              }
-                            }
-                          }
-                        >
-
-                          {/* NODE CIRCLE */}
-                          <circle
-                            cx={position.x}
-                            cy={position.y}
-                            r={
-                              node.findings
-                                ? 18
-                                : 14
-                            }
-                            className={
-                              isSelected
-                                ? 'fill-indigo-600'
-                                : 'fill-white dark:fill-slate-900'
-                            }
-                            stroke="#6366f1"
-                            strokeWidth="2.5"
-                          />
-
-                          {/* CENTER DOT */}
-                          <circle
-                            cx={position.x}
-                            cy={position.y}
-                            r="4"
-                            className={
-                              isSelected
-                                ? 'fill-white'
-                                : 'fill-indigo-500'
-                            }
-                          />
-
-                          {/* LABEL */}
-                          <text
-                            x={position.x}
-                            y={
-                              position.y +
-                              31
-                            }
-                            textAnchor="middle"
-                            fontSize="9"
-                            className="fill-current"
-                          >
-                            {String(
-                              node.id
-                            ).replace(
-                              '.pdf',
-                              ''
-                            )}
-                          </text>
-
-                        </g>
-                      )
-                    }
-                  )}
-
-                </g>
-
-              </svg>
-
-            )}
-
-          </div>
-
-          {/* DETAILS PANEL */}
-          <div>
-
-            {selected ? (
-
-              <div className="card">
-
-                <div className="flex items-center justify-between gap-3">
-
-                  <div>
-
-                    <div className="mut">
-                      Selected document
-                    </div>
-
-                    <h3 className="font-semibold mt-1 break-all">
-                      {selected}
-                    </h3>
-
-                  </div>
-
-                  <button
-                    className="btn"
-                    onClick={() =>
-                      setSelected(null)
-                    }
-                  >
-                    Clear
-                  </button>
-
-                </div>
-
-                <div className="mt-5">
-
-                  <h4 className="font-semibold">
-                    Connections
-                  </h4>
-
-                  {selectedLinks.length ===
-                  0 ? (
-
-                    <p className="mut mt-3">
-                      No connections found for
-                      this document.
-                    </p>
-
-                  ) : (
-
-                    <div className="space-y-3 mt-3">
-
-                      {selectedLinks.map(
-                        (edge, index) => {
-
-                          const other =
-                            edge.a ===
-                            selected
-                              ? edge.b
-                              : edge.a
-
-                          return (
-                            <div
-                              key={index}
-                              className="rounded-xl border border-slate-200 dark:border-slate-800 p-4"
-                            >
-
-                              <div className="font-medium break-all">
-                                ↔ {other}
-                              </div>
-
-                              <div className="mut mt-1">
-                                Relationship:{' '}
-                                {
-                                  edge.type ||
-                                  'related'
-                                }
-                              </div>
-
-                              {edge.entity && (
-                                <div className="mut mt-1">
-                                  Entity:{' '}
-                                  {
-                                    edge.entity
-                                  }
-                                </div>
-                              )}
-
-                              {edge.conflict && (
-                                <div className="text-red-600 dark:text-red-400 font-semibold mt-2">
-                                  ⚠ Conflict detected
-                                </div>
-                              )}
-
-                            </div>
-                          )
-                        }
-                      )}
-
-                    </div>
-
-                  )}
-
-                </div>
-
-              </div>
-
-            ) : (
-
-              <div className="card">
-
-                <h3 className="font-semibold text-lg">
-                  How the graph works
-                </h3>
-
-                <div className="space-y-4 mt-5">
-
-                  <div className="flex gap-3">
-
-                    <span className="w-3 h-3 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
-
-                    <div>
-                      <b>Solid line</b>
-                      <p className="mut">
-                        Documents share a common
-                        entity or relationship.
-                      </p>
-                    </div>
-
-                  </div>
-
-                  <div className="flex gap-3">
-
-                    <span className="w-3 h-3 rounded-full bg-indigo-300 mt-1.5 shrink-0" />
-
-                    <div>
-                      <b>Dashed line</b>
-                      <p className="mut">
-                        Documents are different
-                        versions of the same
-                        document.
-                      </p>
-                    </div>
-
-                  </div>
-
-                  <div className="flex gap-3">
-
-                    <span className="w-3 h-3 rounded-full bg-red-500 mt-1.5 shrink-0" />
-
-                    <div>
-                      <b>Red line</b>
-                      <p className="mut">
-                        InfoMind detected a
-                        conflict between the
-                        documents.
-                      </p>
-                    </div>
-
-                  </div>
-
-                  <div className="rounded-xl bg-indigo-50 dark:bg-indigo-950 p-4 text-sm">
-
-                    <b>Tip</b>
-
-                    <p className="mut mt-1">
-                      Click any document in the
-                      graph to see all documents
-                      connected to it.
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            )}
-
-          </div>
-
-        </div>
-
-      </div>
+      </section>
 
     </div>
   )
