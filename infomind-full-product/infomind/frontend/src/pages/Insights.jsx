@@ -15,104 +15,159 @@ import { api } from '../api'
 import { useData } from '../ctx'
 import { Loading } from '../components'
 
-const COL = {
+const COLORS = {
   CRITICAL: '#dc2626',
   HIGH: '#ea580c',
   MEDIUM: '#d97706',
   LOW: '#64748b'
 }
 
-const obj = o =>
-  Object.entries(o || {}).map(([name, value]) => ({
-    name,
-    value
-  }))
+const ACTION_COLORS = [
+  '#4f46e5',
+  '#0891b2',
+  '#16a34a',
+  '#dc2626'
+]
 
-export default function Insights() {
-  const [ins] = useData(() => api('/insights'))
-  const [g] = useData(() => api('/graph'))
-
-  const [sel, setSel] = useState(null)
-  const [zoom, setZoom] = useState(1)
-  const [showConflicts, setShowConflicts] = useState(true)
-  const [search, setSearch] = useState('')
-
-  if (!ins || !g) {
-    return <Loading />
+function toChartData(value) {
+  if (!value || typeof value !== 'object') {
+    return []
   }
 
-  // Safety checks
-  const nodes = Array.isArray(g.nodes) ? g.nodes : []
-  const edges = Array.isArray(g.edges) ? g.edges : []
+  return Object.entries(value).map(([name, value]) => ({
+    name,
+    value: Number(value) || 0
+  }))
+}
 
-  // No documents available
-  if (nodes.length === 0) {
+function getPosition(index, total) {
+  const angle =
+    (2 * Math.PI * index) / Math.max(total, 1) - Math.PI / 2
+
+  const centerX = 180
+  const centerY = 170
+  const radiusX = 130
+  const radiusY = 120
+
+  return {
+    x: centerX + radiusX * Math.cos(angle),
+    y: centerY + radiusY * Math.sin(angle)
+  }
+}
+
+export default function Insights() {
+  const [ins, insError] = useData(() => api('/insights'))
+  const [graph, graphError] = useData(() => api('/graph'))
+
+  const [selected, setSelected] = useState(null)
+  const [search, setSearch] = useState('')
+  const [showConflicts, setShowConflicts] = useState(true)
+  const [zoom, setZoom] = useState(1)
+
+  /*
+   * Loading
+   */
+  if (!ins || !graph) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <h1 className="text-3xl font-bold tracking-tight">
           Connections
         </h1>
 
-        <div className="card text-center py-16">
-          <div className="text-5xl mb-4">🔗</div>
-
-          <h2 className="text-xl font-semibold">
-            No document connections yet
-          </h2>
-
-          <p className="mut mt-2">
-            Upload or add more documents to see how they are
-            connected.
-          </p>
-        </div>
+        <Loading />
       </div>
     )
   }
 
-  const n = nodes.length
+  /*
+   * Safe graph data
+   */
+  const nodes = Array.isArray(graph.nodes)
+    ? graph.nodes
+    : []
 
-  const positions = Object.fromEntries(
-    nodes.map((d, i) => [
-      d.id,
-      [
-        180 +
-          130 *
-            Math.cos(
-              (2 * Math.PI * i) / n - 1.57
-            ),
-        170 +
-          125 *
-            Math.sin(
-              (2 * Math.PI * i) / n - 1.57
-            )
-      ]
-    ])
+  const edges = Array.isArray(graph.edges)
+    ? graph.edges
+    : []
+
+  /*
+   * Safe insights data
+   */
+  const severityData = toChartData(
+    ins.by_severity
   )
 
-  const filteredNodes = nodes.filter(node =>
-    node.id.toLowerCase().includes(search.toLowerCase())
+  const kindData = toChartData(
+    ins.by_kind
   )
 
+  const actionData = toChartData(
+    ins.actions
+  )
+
+  /*
+   * Search
+   */
+  const searchText = search
+    .trim()
+    .toLowerCase()
+
+  const filteredNodes = nodes.filter(node => {
+    const id = String(node.id || '').toLowerCase()
+
+    return id.includes(searchText)
+  })
+
+  /*
+   * Filter graph edges
+   */
   const filteredEdges = edges.filter(edge => {
     if (!showConflicts && edge.conflict) {
       return false
     }
 
-    if (!search) {
+    if (!searchText) {
       return true
     }
 
+    const a = String(edge.a || '').toLowerCase()
+    const b = String(edge.b || '').toLowerCase()
+
     return (
-      edge.a.toLowerCase().includes(search.toLowerCase()) ||
-      edge.b.toLowerCase().includes(search.toLowerCase())
+      a.includes(searchText) ||
+      b.includes(searchText)
     )
   })
 
-  const selectedLinks = sel
+  /*
+   * Selected document connections
+   */
+  const selectedLinks = selected
     ? edges.filter(
-        e => e.a === sel || e.b === sel
+        edge =>
+          edge.a === selected ||
+          edge.b === selected
       )
     : []
+
+  /*
+   * Graph positions
+   */
+  const positions = {}
+
+  nodes.forEach((node, index) => {
+    positions[node.id] = getPosition(
+      index,
+      nodes.length
+    )
+  })
+
+  /*
+   * API errors
+   */
+  const hasError =
+    insError ||
+    graphError
 
   return (
     <div className="space-y-6">
@@ -124,156 +179,275 @@ export default function Insights() {
         </h1>
 
         <p className="mut mt-1">
-          Explore how your documents are connected.
+          Explore how your documents are connected
+          and identify relationships and conflicts.
         </p>
+      </div>
+
+      {/* ERROR MESSAGE */}
+      {hasError && (
+        <div className="card border-red-300 dark:border-red-900">
+          <h2 className="font-semibold text-red-600 dark:text-red-400">
+            Some information could not be loaded
+          </h2>
+
+          <p className="mut mt-1">
+            The connection graph is still available,
+            but some analytics may be unavailable.
+          </p>
+        </div>
+      )}
+
+      {/* SUMMARY */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
+        <div className="card">
+          <div className="mut">
+            Documents
+          </div>
+
+          <div className="text-3xl font-bold mt-1">
+            {nodes.length}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="mut">
+            Connections
+          </div>
+
+          <div className="text-3xl font-bold mt-1">
+            {edges.length}
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="mut">
+            Conflicts
+          </div>
+
+          <div className="text-3xl font-bold mt-1 text-red-600">
+            {
+              edges.filter(
+                edge => edge.conflict
+              ).length
+            }
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="mut">
+            Selected
+          </div>
+
+          <div className="text-lg font-semibold mt-2 truncate">
+            {selected || 'None'}
+          </div>
+        </div>
+
       </div>
 
       {/* ANALYTICS */}
       <div className="grid md:grid-cols-3 gap-4">
 
+        {/* SEVERITY */}
         <div className="card">
+
           <h2 className="font-semibold">
             Open findings by severity
           </h2>
 
-          <div className="h-48">
-            <ResponsiveContainer>
-              <BarChart data={obj(ins.by_severity)}>
-                <XAxis
-                  dataKey="name"
-                  fontSize={11}
-                />
+          <div className="h-52 mt-3">
 
-                <YAxis
-                  allowDecimals={false}
-                  fontSize={11}
-                />
+            {severityData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={severityData}>
 
-                <Tooltip />
+                  <XAxis
+                    dataKey="name"
+                    fontSize={11}
+                  />
 
-                <Bar
-                  dataKey="value"
-                  radius={6}
-                >
-                  {obj(ins.by_severity).map(d => (
-                    <Cell
-                      key={d.name}
-                      fill={COL[d.name] || '#6366f1'}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+                  <YAxis
+                    allowDecimals={false}
+                    fontSize={11}
+                  />
+
+                  <Tooltip />
+
+                  <Bar
+                    dataKey="value"
+                    radius={6}
+                  >
+                    {severityData.map(item => (
+                      <Cell
+                        key={item.name}
+                        fill={
+                          COLORS[item.name] ||
+                          '#6366f1'
+                        }
+                      />
+                    ))}
+                  </Bar>
+
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full grid place-items-center mut">
+                No severity data
+              </div>
+            )}
+
           </div>
         </div>
 
+        {/* FINDING TYPES */}
         <div className="card">
+
           <h2 className="font-semibold">
             Findings by type
           </h2>
 
-          <div className="h-48">
-            <ResponsiveContainer>
-              <BarChart data={obj(ins.by_kind)}>
-                <XAxis
-                  dataKey="name"
-                  fontSize={11}
-                />
+          <div className="h-52 mt-3">
 
-                <YAxis
-                  allowDecimals={false}
-                  fontSize={11}
-                />
+            {kindData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={kindData}>
 
-                <Tooltip />
+                  <XAxis
+                    dataKey="name"
+                    fontSize={11}
+                  />
 
-                <Bar
-                  dataKey="value"
-                  fill="#4f46e5"
-                  radius={6}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+                  <YAxis
+                    allowDecimals={false}
+                    fontSize={11}
+                  />
+
+                  <Tooltip />
+
+                  <Bar
+                    dataKey="value"
+                    fill="#4f46e5"
+                    radius={6}
+                  />
+
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full grid place-items-center mut">
+                No finding type data
+              </div>
+            )}
+
           </div>
         </div>
 
+        {/* ACTION STATUS */}
         <div className="card">
+
           <h2 className="font-semibold">
             Action status
           </h2>
 
-          <div className="h-48">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={obj(ins.actions)}
-                  dataKey="value"
-                  nameKey="name"
-                  outerRadius={70}
-                  label
-                >
-                  {obj(ins.actions).map((d, i) => (
-                    <Cell
-                      key={d.name}
-                      fill={
-                        [
-                          '#4f46e5',
-                          '#0891b2',
-                          '#16a34a',
-                          '#dc2626'
-                        ][i % 4]
-                      }
-                    />
-                  ))}
-                </Pie>
+          <div className="h-52 mt-3">
 
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {actionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+
+                  <Pie
+                    data={actionData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={70}
+                    label
+                  >
+                    {actionData.map(
+                      (item, index) => (
+                        <Cell
+                          key={item.name}
+                          fill={
+                            ACTION_COLORS[
+                              index %
+                                ACTION_COLORS.length
+                            ]
+                          }
+                        />
+                      )
+                    )}
+                  </Pie>
+
+                  <Tooltip />
+
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full grid place-items-center mut">
+                No action data
+              </div>
+            )}
+
           </div>
         </div>
+
       </div>
 
       {/* CONNECTION GRAPH */}
       <div className="card">
 
+        {/* GRAPH HEADER */}
         <div className="flex items-center gap-3 flex-wrap">
 
           <div className="flex-1">
+
             <h2 className="text-xl font-semibold">
               Document Connection Graph
             </h2>
 
-            <p className="mut">
-              Select a document to explore its
+            <p className="mut mt-1">
+              Click a document to see its
               relationships.
             </p>
+
           </div>
 
-          <span className="text-sm px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
-            {nodes.length} documents
-          </span>
+          <div className="flex gap-2">
 
-          <span className="text-sm px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
-            {edges.length} connections
-          </span>
+            <span className="text-xs px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+              {nodes.length} documents
+            </span>
+
+            <span className="text-xs px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
+              {edges.length} connections
+            </span>
+
+          </div>
 
         </div>
 
         {/* CONTROLS */}
-        <div className="flex gap-2 flex-wrap mt-4">
+        <div className="flex gap-2 flex-wrap mt-5">
 
           <input
-            className="inp max-w-xs"
+            className="inp max-w-sm"
             placeholder="Search documents..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={event =>
+              setSearch(event.target.value)
+            }
           />
 
           <button
             className="btn"
             onClick={() =>
-              setZoom(z => Math.min(z + 0.2, 2))
+              setZoom(
+                value =>
+                  Math.min(
+                    value + 0.2,
+                    2
+                  )
+              )
             }
           >
             +
@@ -282,7 +456,13 @@ export default function Insights() {
           <button
             className="btn"
             onClick={() =>
-              setZoom(z => Math.max(z - 0.2, 0.6))
+              setZoom(
+                value =>
+                  Math.max(
+                    value - 0.2,
+                    0.6
+                  )
+              )
             }
           >
             −
@@ -290,17 +470,23 @@ export default function Insights() {
 
           <button
             className="btn"
-            onClick={() => setZoom(1)}
+            onClick={() =>
+              setZoom(1)
+            }
           >
             Reset
           </button>
 
           <button
             className={`btn ${
-              showConflicts ? 'btn-p' : ''
+              showConflicts
+                ? 'btn-p'
+                : ''
             }`}
             onClick={() =>
-              setShowConflicts(v => !v)
+              setShowConflicts(
+                value => !value
+              )
             }
           >
             {showConflicts
@@ -310,237 +496,377 @@ export default function Insights() {
 
         </div>
 
-        {/* GRAPH */}
-        <div className="mt-5 grid lg:grid-cols-[420px_1fr] gap-6">
+        {/* GRAPH AREA */}
+        <div className="grid lg:grid-cols-[500px_1fr] gap-6 mt-5">
 
+          {/* SVG GRAPH */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-hidden">
 
-            <svg
-              viewBox="0 0 360 340"
-              className="w-full"
-              role="img"
-              aria-label="Document relationship graph"
-            >
+            {nodes.length === 0 ? (
 
-              <g
-                transform={`translate(${
-                  180 - 180 * zoom
-                } ${
-                  170 - 170 * zoom
-                }) scale(${zoom})`}
+              <div className="min-h-[360px] grid place-items-center p-8 text-center">
+
+                <div>
+
+                  <div className="text-5xl mb-4">
+                    🔗
+                  </div>
+
+                  <h3 className="font-semibold text-lg">
+                    No document connections yet
+                  </h3>
+
+                  <p className="mut mt-2">
+                    There are currently no
+                    documents available for
+                    the connection graph.
+                  </p>
+
+                </div>
+
+              </div>
+
+            ) : (
+
+              <svg
+                viewBox="0 0 360 340"
+                className="w-full min-h-[360px]"
+                role="img"
+                aria-label="Document connection graph"
               >
 
-                {/* CONNECTION LINES */}
-                {filteredEdges.map((e, i) => {
+                <g
+                  transform={`
+                    translate(
+                      ${180 - 180 * zoom}
+                      ${170 - 170 * zoom}
+                    )
+                    scale(${zoom})
+                  `}
+                >
 
-                  const a = positions[e.a]
-                  const b = positions[e.b]
+                  {/* EDGES */}
+                  {filteredEdges.map(
+                    (edge, index) => {
 
-                  if (!a || !b) {
-                    return null
-                  }
+                      const start =
+                        positions[edge.a]
 
-                  return (
-                    <line
-                      key={i}
-                      x1={a[0]}
-                      y1={a[1]}
-                      x2={b[0]}
-                      y2={b[1]}
-                      stroke={
-                        e.conflict
-                          ? '#dc2626'
-                          : '#6366f1'
+                      const end =
+                        positions[edge.b]
+
+                      if (
+                        !start ||
+                        !end
+                      ) {
+                        return null
                       }
-                      strokeWidth={
-                        e.conflict ? 3 : 1.5
+
+                      return (
+                        <line
+                          key={index}
+                          x1={start.x}
+                          y1={start.y}
+                          x2={end.x}
+                          y2={end.y}
+                          stroke={
+                            edge.conflict
+                              ? '#dc2626'
+                              : '#6366f1'
+                          }
+                          strokeWidth={
+                            edge.conflict
+                              ? 3
+                              : 1.5
+                          }
+                          strokeDasharray={
+                            edge.type ===
+                            'version'
+                              ? '6 4'
+                              : undefined
+                          }
+                        />
+                      )
+                    }
+                  )}
+
+                  {/* NODES */}
+                  {filteredNodes.map(
+                    node => {
+
+                      const position =
+                        positions[node.id]
+
+                      if (!position) {
+                        return null
                       }
-                      strokeDasharray={
-                        e.type === 'version'
-                          ? '5 3'
-                          : ''
-                      }
-                    />
-                  )
-                })}
 
-                {/* DOCUMENT NODES */}
-                {filteredNodes.map(d => {
+                      const isSelected =
+                        selected ===
+                        node.id
 
-                  const p = positions[d.id]
+                      return (
+                        <g
+                          key={node.id}
+                          role="button"
+                          tabIndex={0}
+                          className="cursor-pointer"
+                          onClick={() =>
+                            setSelected(
+                              node.id
+                            )
+                          }
+                          onKeyDown={
+                            event => {
+                              if (
+                                event.key ===
+                                'Enter'
+                              ) {
+                                setSelected(
+                                  node.id
+                                )
+                              }
+                            }
+                          }
+                        >
 
-                  if (!p) {
-                    return null
-                  }
+                          {/* NODE CIRCLE */}
+                          <circle
+                            cx={position.x}
+                            cy={position.y}
+                            r={
+                              node.findings
+                                ? 18
+                                : 14
+                            }
+                            className={
+                              isSelected
+                                ? 'fill-indigo-600'
+                                : 'fill-white dark:fill-slate-900'
+                            }
+                            stroke="#6366f1"
+                            strokeWidth="2.5"
+                          />
 
-                  const selected =
-                    sel === d.id
+                          {/* CENTER DOT */}
+                          <circle
+                            cx={position.x}
+                            cy={position.y}
+                            r="4"
+                            className={
+                              isSelected
+                                ? 'fill-white'
+                                : 'fill-indigo-500'
+                            }
+                          />
 
-                  return (
-                    <g
-                      key={d.id}
-                      tabIndex={0}
-                      role="button"
-                      onClick={() =>
-                        setSel(d.id)
-                      }
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') {
-                          setSel(d.id)
-                        }
-                      }}
-                      className="cursor-pointer"
-                    >
+                          {/* LABEL */}
+                          <text
+                            x={position.x}
+                            y={
+                              position.y +
+                              31
+                            }
+                            textAnchor="middle"
+                            fontSize="9"
+                            className="fill-current"
+                          >
+                            {String(
+                              node.id
+                            ).replace(
+                              '.pdf',
+                              ''
+                            )}
+                          </text>
 
-                      <circle
-                        cx={p[0]}
-                        cy={p[1]}
-                        r={
-                          d.findings
-                            ? 18
-                            : 13
-                        }
-                        className={
-                          selected
-                            ? 'fill-indigo-600'
-                            : 'fill-white dark:fill-slate-900'
-                        }
-                        stroke="#6366f1"
-                        strokeWidth="2.5"
-                      />
+                        </g>
+                      )
+                    }
+                  )}
 
-                      <text
-                        x={p[0]}
-                        y={p[1] + 32}
-                        textAnchor="middle"
-                        fontSize="9"
-                        className="fill-current"
-                      >
-                        {d.id.replace(
-                          '.pdf',
-                          ''
-                        )}
-                      </text>
+                </g>
 
-                    </g>
-                  )
-                })}
+              </svg>
 
-              </g>
-
-            </svg>
+            )}
 
           </div>
 
-          {/* DETAILS */}
+          {/* DETAILS PANEL */}
           <div>
 
-            {sel ? (
+            {selected ? (
+
               <div className="card">
 
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-semibold">
-                    Selected document
-                  </h3>
+                <div className="flex items-center justify-between gap-3">
+
+                  <div>
+
+                    <div className="mut">
+                      Selected document
+                    </div>
+
+                    <h3 className="font-semibold mt-1 break-all">
+                      {selected}
+                    </h3>
+
+                  </div>
 
                   <button
                     className="btn"
                     onClick={() =>
-                      setSel(null)
+                      setSelected(null)
                     }
                   >
                     Clear
                   </button>
+
                 </div>
 
-                <div className="mt-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950">
-                  <b>{sel}</b>
-                </div>
+                <div className="mt-5">
 
-                {selectedLinks.length > 0 ? (
-                  <div className="mt-4 space-y-3">
+                  <h4 className="font-semibold">
+                    Connections
+                  </h4>
 
-                    <div className="mut">
-                      Connected documents
+                  {selectedLinks.length ===
+                  0 ? (
+
+                    <p className="mut mt-3">
+                      No connections found for
+                      this document.
+                    </p>
+
+                  ) : (
+
+                    <div className="space-y-3 mt-3">
+
+                      {selectedLinks.map(
+                        (edge, index) => {
+
+                          const other =
+                            edge.a ===
+                            selected
+                              ? edge.b
+                              : edge.a
+
+                          return (
+                            <div
+                              key={index}
+                              className="rounded-xl border border-slate-200 dark:border-slate-800 p-4"
+                            >
+
+                              <div className="font-medium break-all">
+                                ↔ {other}
+                              </div>
+
+                              <div className="mut mt-1">
+                                Relationship:{' '}
+                                {
+                                  edge.type ||
+                                  'related'
+                                }
+                              </div>
+
+                              {edge.entity && (
+                                <div className="mut mt-1">
+                                  Entity:{' '}
+                                  {
+                                    edge.entity
+                                  }
+                                </div>
+                              )}
+
+                              {edge.conflict && (
+                                <div className="text-red-600 dark:text-red-400 font-semibold mt-2">
+                                  ⚠ Conflict detected
+                                </div>
+                              )}
+
+                            </div>
+                          )
+                        }
+                      )}
+
                     </div>
 
-                    {selectedLinks.map(
-                      (e, i) => (
-                        <div
-                          key={i}
-                          className="p-3 rounded-xl border border-slate-200 dark:border-slate-800"
-                        >
+                  )}
 
-                          <div className="font-medium">
-                            ↔{' '}
-                            {e.a === sel
-                              ? e.b
-                              : e.a}
-                          </div>
-
-                          <div className="mut mt-1">
-                            Relationship:{' '}
-                            {e.type}
-                          </div>
-
-                          {e.entity && (
-                            <div className="mut">
-                              Entity:{' '}
-                              {e.entity}
-                            </div>
-                          )}
-
-                          {e.conflict && (
-                            <div className="text-red-600 dark:text-red-400 font-semibold mt-1">
-                              ⚠ Conflict detected
-                            </div>
-                          )}
-
-                        </div>
-                      )
-                    )}
-
-                  </div>
-                ) : (
-                  <p className="mut mt-4">
-                    No connections found for
-                    this document.
-                  </p>
-                )}
+                </div>
 
               </div>
+
             ) : (
+
               <div className="card">
 
-                <h3 className="font-semibold">
+                <h3 className="font-semibold text-lg">
                   How the graph works
                 </h3>
 
-                <div className="space-y-3 mt-4 text-sm">
+                <div className="space-y-4 mt-5">
 
-                  <p>
-                    🔵 <b>Solid line</b> — shared
-                    entity
-                  </p>
+                  <div className="flex gap-3">
 
-                  <p>
-                    🔵 <b>Dashed line</b> —
-                    document version
-                  </p>
+                    <span className="w-3 h-3 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
 
-                  <p>
-                    🔴 <b>Red line</b> — detected
-                    conflict
-                  </p>
+                    <div>
+                      <b>Solid line</b>
+                      <p className="mut">
+                        Documents share a common
+                        entity or relationship.
+                      </p>
+                    </div>
 
-                  <p className="mut">
-                    Click any document node to
-                    see its relationships.
-                  </p>
+                  </div>
+
+                  <div className="flex gap-3">
+
+                    <span className="w-3 h-3 rounded-full bg-indigo-300 mt-1.5 shrink-0" />
+
+                    <div>
+                      <b>Dashed line</b>
+                      <p className="mut">
+                        Documents are different
+                        versions of the same
+                        document.
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="flex gap-3">
+
+                    <span className="w-3 h-3 rounded-full bg-red-500 mt-1.5 shrink-0" />
+
+                    <div>
+                      <b>Red line</b>
+                      <p className="mut">
+                        InfoMind detected a
+                        conflict between the
+                        documents.
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <div className="rounded-xl bg-indigo-50 dark:bg-indigo-950 p-4 text-sm">
+
+                    <b>Tip</b>
+
+                    <p className="mut mt-1">
+                      Click any document in the
+                      graph to see all documents
+                      connected to it.
+                    </p>
+
+                  </div>
 
                 </div>
 
               </div>
+
             )}
 
           </div>
