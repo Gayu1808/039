@@ -60,29 +60,288 @@ select option {
 }
 /* InfoMind Light/Dark Theme */
 
+/* =========================================
+   INFOMIND AI - PROFESSIONAL COLOR THEME
+   ========================================= */
+
+/* ---------- LIGHT THEME ---------- */
+
 html:not(.dark) body {
-  background-color: #f8fafc;
+  background:
+    radial-gradient(
+      circle at 90% 0%,
+      rgba(99, 102, 241, 0.08),
+      transparent 30%
+    ),
+    #f5f7ff;
+
   color: #0f172a;
 }
+
+/* Main content */
+html:not(.dark) main {
+  background: transparent;
+}
+
+/* Cards */
+html:not(.dark) .card {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #dbe3f0;
+  box-shadow:
+    0 4px 18px rgba(30, 41, 59, 0.06);
+}
+
+/* Primary buttons */
+html:not(.dark) .btn-p {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #ffffff;
+}
+
+html:not(.dark) .btn-p:hover {
+  background: #4338ca;
+  border-color: #4338ca;
+}
+
+/* Input fields */
+html:not(.dark) .inp {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* Selected navigation */
+html:not(.dark)
+  aside
+  button[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    #eef2ff,
+    #e0e7ff
+  );
+
+  color: #4338ca;
+}
+
+/* Sidebar */
+html:not(.dark) aside {
+  background: #111827 !important;
+  border-color: #1f2937 !important;
+  color: #e5e7eb;
+}
+
+/* Sidebar text */
+html:not(.dark) aside button {
+  color: #94a3b8;
+}
+
+html:not(.dark) aside button:hover {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+html:not(.dark)
+  aside
+  button[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    #312e81,
+    #4338ca
+  );
+
+  color: #ffffff;
+}
+
+/* Sidebar profile */
+html:not(.dark) aside .card {
+  background: #172033 !important;
+  border-color: #26334a !important;
+  color: #f8fafc;
+}
+
+/* Header */
+html:not(.dark) header {
+  background: rgba(
+    255,
+    255,
+    255,
+    0.92
+  ) !important;
+
+  border-color: #e2e8f0 !important;
+}
+
+/* Search bar */
+html:not(.dark) header button {
+  background: #eef2ff;
+  color: #64748b;
+}
+
+/* ---------- DARK THEME ---------- */
 
 html.dark body {
-  background-color: #020617;
+  background:
+    radial-gradient(
+      circle at 80% 0%,
+      rgba(79, 70, 229, 0.15),
+      transparent 32%
+    ),
+    #020617;
+
   color: #f8fafc;
 }
 
-html:not(.dark) .card {
-  background-color: #ffffff;
-  color: #0f172a;
-  border-color: #e2e8f0;
-}
-
+/* Dark cards */
 html.dark .card {
-  background-color: #0f172a;
+  background: #0f172a;
   color: #f8fafc;
   border-color: #1e293b;
+
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.2);
 }
 
+/* Dark primary button */
+html.dark .btn-p {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+html.dark .btn-p:hover {
+  background: #818cf8;
+}
+
+/* Dark input */
+html.dark .inp {
+  background: #0f172a;
+  color: #f8fafc;
+  border-color: #334155;
+}
+
+/* Dark sidebar */
+html.dark aside {
+  background: #0b1120 !important;
+  border-color: #1e293b !important;
+}
+
+/* Dark sidebar selected item */
+html.dark
+  aside
+  button[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    #312e81,
+    #4338ca
+  );
+
+  color: #ffffff;
+}
+
+/* Dark profile card */
+html.dark aside .card {
+  background: #111827 !important;
+  border-color: #26334a !important;
+}
+
+/* ---------- THEME COLORS ---------- */
+
+/* Indigo */
+.theme-indigo .btn-p {
+  background: #4f46e5;
+  border-color: #4f46e5;
+}
+
+/* Emerald */
+.theme-emerald .btn-p {
+  background: #059669;
+  border-color: #059669;
+}
+
+.theme-emerald
+  aside
+  button[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    #065f46,
+    #059669
+  );
+
+  color: white;
+}
+
+/* Violet */
+.theme-violet .btn-p {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}
+
+.theme-violet
+  aside
+  button[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    #5b21b6,
+    #7c3aed
+  );
+
+  color: white;
+}
+
+/* Rose */
 .theme-rose .btn-p {
-  background-color: #e11d48;
+  background: #e11d48;
+  border-color: #e11d48;
+}
+
+.theme-rose
+  aside
+  button[aria-current="page"] {
+  background: linear-gradient(
+    135deg,
+    #9f1239,
+    #e11d48
+  );
+
+  color: white;
+}
+
+/* ---------- DROPDOWN READABILITY ---------- */
+
+select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.dark select {
+  color-scheme: dark;
+}
+
+.dark select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.dark select option:checked {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+/* ---------- SMOOTH TRANSITIONS ---------- */
+
+body,
+.card,
+aside,
+header,
+button,
+input,
+select {
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
   border-color: #e11d48;
 }
