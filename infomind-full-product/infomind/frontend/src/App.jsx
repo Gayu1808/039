@@ -66,10 +66,6 @@ export default function App() {
   const [authed, setAuthed] = useState(hasToken())
   const [me, setMe] = useState(null)
 
-  /* =========================================
-     EDITABLE PROFILE NAME
-     ========================================= */
-
   const [displayName, setDisplayName] = useState(
     localStorage.getItem('infomind-display-name') || ''
   )
@@ -104,26 +100,53 @@ export default function App() {
      ========================================= */
 
   useEffect(() => {
-    if (authed) {
-      api('/auth/me')
-        .then(user => {
-          setMe(user)
+    if (!authed) return
 
-          const savedName =
-            localStorage.getItem(
-              'infomind-display-name'
-            )
+    api('/auth/me')
+      .then(user => {
+        setMe(user)
 
-          if (!savedName && user?.name) {
-            setDisplayName(user.name)
-          }
-        })
-        .catch(() => {
-          setToken(null)
-          setAuthed(false)
-        })
-    }
+        const savedName =
+          localStorage.getItem(
+            'infomind-display-name'
+          )
+
+        if (!savedName && user?.name) {
+          setDisplayName(user.name)
+        }
+      })
+      .catch(() => {
+        setToken(null)
+        setAuthed(false)
+      })
   }, [authed])
+
+  /* =========================================
+     LISTEN FOR PROFILE NAME CHANGES
+     ========================================= */
+
+  useEffect(() => {
+    const updateName = () => {
+      const savedName =
+        localStorage.getItem(
+          'infomind-display-name'
+        )
+
+      setDisplayName(savedName || '')
+    }
+
+    window.addEventListener(
+      'infomind-name-updated',
+      updateName
+    )
+
+    return () => {
+      window.removeEventListener(
+        'infomind-name-updated',
+        updateName
+      )
+    }
+  }, [])
 
   /* =========================================
      THEME
@@ -156,24 +179,31 @@ export default function App() {
      ========================================= */
 
   useEffect(() => {
-    const k = e => {
+    const handleKey = event => {
       if (
-        (e.ctrlKey || e.metaKey) &&
-        e.key === 'k'
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === 'k'
       ) {
-        e.preventDefault()
-        setPal(p => !p)
+        event.preventDefault()
+        setPal(value => !value)
       }
 
-      if (e.key === 'Escape') {
+      if (event.key === 'Escape') {
         setPal(false)
       }
     }
 
-    addEventListener('keydown', k)
+    window.addEventListener(
+      'keydown',
+      handleKey
+    )
 
-    return () =>
-      removeEventListener('keydown', k)
+    return () => {
+      window.removeEventListener(
+        'keydown',
+        handleKey
+      )
+    }
   }, [])
 
   /* =========================================
@@ -204,23 +234,30 @@ export default function App() {
      PERMISSIONS
      ========================================= */
 
-  const can = p =>
-    me.permissions.includes(p)
+  const can = permission =>
+    me.permissions.includes(permission)
 
   const items = NAV.filter(
-    n => !n[4] || can(n[4])
+    item => !item[4] || can(item[4])
   )
 
   const Page =
-    (NAV.find(n => n[0] === page) ||
-      NAV[0])[3]
+    (
+      NAV.find(item => item[0] === page) ||
+      NAV[0]
+    )[3]
 
   /* =========================================
-     FINAL DISPLAY NAME
+     CURRENT PROFILE NAME
      ========================================= */
 
   const sidebarName =
-    displayName || me.name || 'User'
+    displayName ||
+    localStorage.getItem(
+      'infomind-display-name'
+    ) ||
+    me.name ||
+    'User'
 
   return (
     <Ctx.Provider
@@ -232,12 +269,10 @@ export default function App() {
         toast,
         nav,
         params,
-
-        /* Profile name controls */
-        displayName,
-        setDisplayName
+        displayName
       }}
     >
+
       <div className="md:grid md:grid-cols-[250px_1fr] min-h-screen">
 
         {/* =====================================
@@ -269,9 +304,7 @@ export default function App() {
             )
           )}
 
-          {/* ===================================
-              PROFILE
-              =================================== */}
+          {/* PROFILE */}
 
           <div className="mt-auto card !p-3 text-sm">
 
@@ -304,6 +337,7 @@ export default function App() {
                 setAuthed(false)
                 setMe(null)
                 setDisplayName('')
+
                 localStorage.removeItem(
                   'infomind-display-name'
                 )
@@ -318,12 +352,10 @@ export default function App() {
         </aside>
 
         {/* =====================================
-            MAIN CONTENT
+            MAIN
             ===================================== */}
 
         <div className="min-w-0">
-
-          {/* HEADER */}
 
           <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
 
@@ -352,17 +384,16 @@ export default function App() {
 
           </header>
 
-          {/* PAGE */}
-
           <main className="p-4 md:p-6 pb-24 md:pb-6 max-w-7xl mx-auto">
             <Page />
           </main>
 
         </div>
+
       </div>
 
       {/* =====================================
-          MOBILE NAVIGATION
+          MOBILE NAV
           ===================================== */}
 
       <nav className="md:hidden fixed bottom-0 inset-x-0 flex justify-around bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-2 z-20">
@@ -413,8 +444,8 @@ export default function App() {
 
           <div
             className="card w-[92vw] max-w-lg !p-2"
-            onClick={e =>
-              e.stopPropagation()
+            onClick={event =>
+              event.stopPropagation()
             }
           >
 
@@ -422,17 +453,19 @@ export default function App() {
               autoFocus
               className="inp mb-2"
               placeholder="Go to a page or ask AI…"
-              onKeyDown={e => {
+              onKeyDown={event => {
+
                 if (
-                  e.key === 'Enter' &&
-                  e.target.value
+                  event.key === 'Enter' &&
+                  event.target.value
                 ) {
                   nav('ask', {
-                    q: e.target.value
+                    q: event.target.value
                   })
 
                   setPal(false)
                 }
+
               }}
             />
 
@@ -460,24 +493,21 @@ export default function App() {
   )
 }
 
-/* =========================================
-   CRITICAL FINDINGS COUNT
-   ========================================= */
-
 function BellCount() {
-  const [f] = useData(
+  const [findings] = useData(
     () => api('/findings')
   )
 
-  const n = f
-    ? f.filter(
-        x => x.severity === 'CRITICAL'
+  const count = findings
+    ? findings.filter(
+        item =>
+          item.severity === 'CRITICAL'
       ).length
     : 0
 
-  return n ? (
+  return count ? (
     <span className="text-xs bg-red-600 text-white rounded-full px-2">
-      {n}
+      {count}
     </span>
   ) : null
 }
