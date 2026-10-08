@@ -194,7 +194,9 @@ export default function App() {
               </div>
 
               <div className="min-w-0">
-                <b className="block truncate">{me.name}</b>
+                <b className="block truncate">
+  {me.role === 'admin' ? 'Admin' : me.name}
+</b>
                 <div className="mut capitalize">
                   {me.role}
                 </div>
