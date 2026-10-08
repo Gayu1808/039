@@ -53,6 +53,7 @@ function Logo() {
         <div className="font-bold text-lg leading-tight">
           InfoMind <span className="text-indigo-500">AI</span>
         </div>
+
         <div className="text-[10px] text-slate-500">
           Understand. Connect. Act.
         </div>
@@ -64,13 +65,22 @@ function Logo() {
 export default function App() {
   const [authed, setAuthed] = useState(hasToken())
   const [me, setMe] = useState(null)
+
+  /* Editable display name */
+  const [displayName, setDisplayName] = useState(
+    localStorage.getItem('infomind-display-name') || ''
+  )
+
   const [page, setPage] = useState('dashboard')
   const [params, setParams] = useState({})
   const [tick, setTick] = useState(0)
   const [msg, setMsg] = useState('')
   const [pal, setPal] = useState(false)
 
-  const bump = useCallback(() => setTick(t => t + 1), [])
+  const bump = useCallback(
+    () => setTick(t => t + 1),
+    []
+  )
 
   const toast = useCallback(m => {
     setMsg(m)
@@ -83,11 +93,29 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [])
 
-  // Load user
+  /* =========================================
+     LOAD USER
+     ========================================= */
+
   useEffect(() => {
     if (authed) {
       api('/auth/me')
-        .then(setMe)
+        .then(user => {
+          setMe(user)
+
+          /*
+           * If there is no locally edited name yet,
+           * use the name received from the backend.
+           */
+          const savedName =
+            localStorage.getItem(
+              'infomind-display-name'
+            )
+
+          if (!savedName && user?.name) {
+            setDisplayName(user.name)
+          }
+        })
         .catch(() => {
           setToken(null)
           setAuthed(false)
@@ -95,9 +123,41 @@ export default function App() {
     }
   }, [authed])
 
-  // Theme
+  /* =========================================
+     LISTEN FOR PROFILE NAME CHANGES
+     ========================================= */
+
   useEffect(() => {
-    const theme = localStorage.getItem('infomind-theme') || 'light'
+    const updateDisplayName = () => {
+      const savedName =
+        localStorage.getItem(
+          'infomind-display-name'
+        ) || ''
+
+      setDisplayName(savedName)
+    }
+
+    window.addEventListener(
+      'infomind-name-updated',
+      updateDisplayName
+    )
+
+    return () => {
+      window.removeEventListener(
+        'infomind-name-updated',
+        updateDisplayName
+      )
+    }
+  }, [])
+
+  /* =========================================
+     THEME
+     ========================================= */
+
+  useEffect(() => {
+    const theme =
+      localStorage.getItem('infomind-theme') ||
+      'light'
 
     document.documentElement.classList.remove(
       'dark',
@@ -108,16 +168,26 @@ export default function App() {
     )
 
     if (theme === 'dark') {
-      document.documentElement.classList.add('dark')
+      document.documentElement.classList.add(
+        'dark'
+      )
     } else if (theme !== 'light') {
-      document.documentElement.classList.add(`theme-${theme}`)
+      document.documentElement.classList.add(
+        `theme-${theme}`
+      )
     }
   }, [])
 
-  // Keyboard command
+  /* =========================================
+     KEYBOARD COMMAND
+     ========================================= */
+
   useEffect(() => {
     const k = e => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.key === 'k'
+      ) {
         e.preventDefault()
         setPal(p => !p)
       }
@@ -128,25 +198,49 @@ export default function App() {
     }
 
     addEventListener('keydown', k)
-    return () => removeEventListener('keydown', k)
+
+    return () =>
+      removeEventListener('keydown', k)
   }, [])
 
+  /* =========================================
+     AUTH
+     ========================================= */
+
   if (!authed) {
-    return <Login onDone={() => setAuthed(true)} />
+    return (
+      <Login
+        onDone={() => setAuthed(true)}
+      />
+    )
   }
 
   if (!me) {
-    return <div className="p-10 mut">Loading workspace…</div>
+    return (
+      <div className="p-10 mut">
+        Loading workspace…
+      </div>
+    )
   }
 
-  const can = p => me.permissions.includes(p)
+  const can = p =>
+    me.permissions.includes(p)
 
   const items = NAV.filter(
     n => !n[4] || can(n[4])
   )
 
   const Page =
-    (NAV.find(n => n[0] === page) || NAV[0])[3]
+    (NAV.find(n => n[0] === page) ||
+      NAV[0])[3]
+
+  /*
+   * Display name priority:
+   * 1. Edited name from Settings
+   * 2. Backend name
+   */
+  const sidebarName =
+    displayName || me.name || 'User'
 
   return (
     <Ctx.Provider
@@ -162,7 +256,10 @@ export default function App() {
     >
       <div className="md:grid md:grid-cols-[250px_1fr] min-h-screen">
 
-        {/* SIDEBAR */}
+        {/* =========================================
+            SIDEBAR
+            ========================================= */}
+
         <aside className="hidden md:flex flex-col gap-1 p-3 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen">
 
           <Logo />
@@ -171,36 +268,49 @@ export default function App() {
             <div className="h-px bg-slate-200 dark:bg-slate-800" />
           </div>
 
-          {items.map(([id, label, Icon]) => (
-            <button
-              key={id}
-              onClick={() => nav(id)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition ${
-                page === id
-                  ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              <Icon size={17} />
-              {label}
-            </button>
-          ))}
+          {items.map(
+            ([id, label, Icon]) => (
+              <button
+                key={id}
+                onClick={() => nav(id)}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-sm transition ${
+                  page === id
+                    ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Icon size={17} />
+                {label}
+              </button>
+            )
+          )}
 
-          {/* PROFILE */}
+          {/* =========================================
+              PROFILE
+              ========================================= */}
+
           <div className="mt-auto card !p-3 text-sm">
+
             <div className="flex items-center gap-3">
+
               <div className="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
                 <UserCircle size={22} />
               </div>
 
               <div className="min-w-0">
+
                 <b className="block truncate">
-  {me.role === 'admin' ? 'Admin' : me.name}
-</b>
+                  {me.role === 'admin'
+                    ? 'Admin'
+                    : sidebarName}
+                </b>
+
                 <div className="mut capitalize">
                   {me.role}
                 </div>
+
               </div>
+
             </div>
 
             <button
@@ -214,10 +324,14 @@ export default function App() {
               <LogOut size={14} />
               Sign out
             </button>
+
           </div>
         </aside>
 
-        {/* MAIN */}
+        {/* =========================================
+            MAIN
+            ========================================= */}
+
         <div className="min-w-0">
 
           <header className="sticky top-0 z-10 flex items-center gap-3 px-4 md:px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800">
@@ -227,7 +341,9 @@ export default function App() {
               onClick={() => setPal(true)}
             >
               <Search size={16} />
+
               Ask InfoMind anything…
+
               <kbd className="ml-auto hidden md:block text-xs">
                 Ctrl K
               </kbd>
@@ -239,7 +355,9 @@ export default function App() {
             </span>
 
             <Bell size={18} />
+
             <BellCount />
+
           </header>
 
           <main className="p-4 md:p-6 pb-24 md:pb-6 max-w-7xl mx-auto">
@@ -249,82 +367,118 @@ export default function App() {
         </div>
       </div>
 
-      {/* MOBILE NAV */}
+      {/* =========================================
+          MOBILE NAV
+          ========================================= */}
+
       <nav className="md:hidden fixed bottom-0 inset-x-0 flex justify-around bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-2 z-20">
+
         {[
           ['dashboard', 'Home'],
           ['documents', 'Docs'],
           ['ask', 'Ask AI'],
           ['insights', 'Graph'],
           ['settings', 'Settings']
-        ].map(([id, label]) => (
-          <button
-            key={id}
-            onClick={() => nav(id)}
-            className={`text-xs px-2 py-1 ${
-              page === id
-                ? 'text-indigo-600 font-semibold'
-                : 'mut'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        ].map(
+          ([id, label]) => (
+            <button
+              key={id}
+              onClick={() => nav(id)}
+              className={`text-xs px-2 py-1 ${
+                page === id
+                  ? 'text-indigo-600 font-semibold'
+                  : 'mut'
+              }`}
+            >
+              {label}
+            </button>
+          )
+        )}
+
       </nav>
 
-      {/* TOAST */}
+      {/* =========================================
+          TOAST
+          ========================================= */}
+
       {msg && (
         <div className="fixed bottom-20 md:bottom-6 right-4 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-2 rounded-xl shadow-lg z-30">
           {msg}
         </div>
       )}
 
-      {/* COMMAND BAR */}
+      {/* =========================================
+          COMMAND BAR
+          ========================================= */}
+
       {pal && (
         <div
           className="fixed inset-0 bg-black/50 z-40 grid place-items-start justify-center pt-[12vh]"
           onClick={() => setPal(false)}
         >
+
           <div
             className="card w-[92vw] max-w-lg !p-2"
-            onClick={e => e.stopPropagation()}
+            onClick={e =>
+              e.stopPropagation()
+            }
           >
+
             <input
               autoFocus
               className="inp mb-2"
               placeholder="Go to a page or ask AI…"
               onKeyDown={e => {
-                if (e.key === 'Enter' && e.target.value) {
-                  nav('ask', { q: e.target.value })
+                if (
+                  e.key === 'Enter' &&
+                  e.target.value
+                ) {
+                  nav('ask', {
+                    q: e.target.value
+                  })
+
                   setPal(false)
                 }
               }}
             />
 
-            {items.map(([id, label]) => (
-              <button
-                key={id}
-                className="block w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950"
-                onClick={() => {
-                  nav(id)
-                  setPal(false)
-                }}
-              >
-                {label}
-              </button>
-            ))}
+            {items.map(
+              ([id, label]) => (
+                <button
+                  key={id}
+                  className="block w-full text-left px-3 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950"
+                  onClick={() => {
+                    nav(id)
+                    setPal(false)
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            )}
+
           </div>
+
         </div>
       )}
+
     </Ctx.Provider>
   )
 }
 
+/* =========================================
+   CRITICAL FINDINGS COUNT
+   ========================================= */
+
 function BellCount() {
-  const [f] = useData(() => api('/findings'))
+  const [f] = useData(
+    () => api('/findings')
+  )
 
   const n = f
-    ? f.filter(x => x.severity === 'CRITICAL').length
+    ? f.filter(
+        x => x.severity === 'CRITICAL'
+      ).length
     : 0
 
   return n ? (
