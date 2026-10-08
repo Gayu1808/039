@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import {
   FileText,
   AlertTriangle,
@@ -6,39 +8,91 @@ import {
   Activity,
   ArrowRight,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react'
 
 import { api } from '../api'
 import { useApp, useData } from '../ctx'
+
 export default function Dashboard() {
+
   const { me, nav } = useApp()
 
-  const displayName =
-    localStorage.getItem('infomind-display-name') ||
-    me?.name ||
-    'User'
+  /* =========================================
+     DISPLAY NAME
+     ========================================= */
 
-export default function Dashboard() {
-  const {
-    me,
+  const [
     displayName,
-    nav
-  } = useApp()
-
-  const [dashboard] = useData(
-    () => api('/dashboard')
+    setDisplayName
+  ] = useState(
+    localStorage.getItem(
+      'infomind-display-name'
+    ) ||
+      me?.name ||
+      'User'
   )
 
-  const [findings] = useData(
-    () => api('/findings')
-  )
+  /* =========================================
+     LISTEN FOR NAME CHANGES
+     ========================================= */
 
-  const [actions] = useData(
-    () => api('/actions')
-  )
+  useEffect(() => {
 
-  const stats = dashboard || {}
+    const updateName = () => {
+
+      const savedName =
+        localStorage.getItem(
+          'infomind-display-name'
+        )
+
+      setDisplayName(
+        savedName ||
+        me?.name ||
+        'User'
+      )
+    }
+
+    window.addEventListener(
+      'infomind-name-updated',
+      updateName
+    )
+
+    return () => {
+      window.removeEventListener(
+        'infomind-name-updated',
+        updateName
+      )
+    }
+
+  }, [me?.name])
+
+  /* =========================================
+     DATA
+     ========================================= */
+
+  const [dashboard] =
+    useData(
+      () => api('/dashboard')
+    )
+
+  const [findings] =
+    useData(
+      () => api('/findings')
+    )
+
+  const [actions] =
+    useData(
+      () => api('/actions')
+    )
+
+  /* =========================================
+     STATISTICS
+     ========================================= */
+
+  const stats =
+    dashboard || {}
 
   const documents =
     stats.documents ??
@@ -47,12 +101,15 @@ export default function Dashboard() {
 
   const criticalFindings =
     stats.critical_findings ??
-    (findings
-      ? findings.filter(
-          item =>
-            item.severity === 'CRITICAL'
-        ).length
-      : 0)
+    (
+      findings
+        ? findings.filter(
+            item =>
+              item.severity ===
+              'CRITICAL'
+          ).length
+        : 0
+    )
 
   const conflicts =
     stats.conflicts ??
@@ -62,13 +119,17 @@ export default function Dashboard() {
   const completedActions =
     stats.actions_completed ??
     stats.completed_actions ??
-    (actions
-      ? actions.filter(
-          item =>
-            item.status === 'COMPLETED' ||
-            item.status === 'completed'
-        ).length
-      : 0)
+    (
+      actions
+        ? actions.filter(
+            item =>
+              item.status ===
+                'COMPLETED' ||
+              item.status ===
+                'completed'
+          ).length
+        : 0
+    )
 
   const informationHealth =
     stats.information_health ??
@@ -78,24 +139,19 @@ export default function Dashboard() {
   const attentionItems =
     findings || []
 
-  const userName =
-    displayName ||
-    me?.name ||
-    'User'
-
   return (
     <div className="space-y-8">
 
-      {/* =========================================
-          HEADER
-          ========================================= */}
+      {/* =====================================
+          GREETING
+          ===================================== */}
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
         <div>
 
           <h1 className="text-3xl font-bold tracking-tight">
-            Good day, {userName}
+            Good day, {displayName}
           </h1>
 
           <p className="mut mt-1">
@@ -116,13 +172,11 @@ export default function Dashboard() {
 
       </div>
 
-      {/* =========================================
+      {/* =====================================
           SUMMARY CARDS
-          ========================================= */}
+          ===================================== */}
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-
-        {/* Documents */}
 
         <div className="card !p-5">
 
@@ -145,8 +199,6 @@ export default function Dashboard() {
 
         </div>
 
-        {/* Critical Findings */}
-
         <div className="card !p-5">
 
           <div className="flex items-center justify-between">
@@ -167,8 +219,6 @@ export default function Dashboard() {
           </div>
 
         </div>
-
-        {/* Conflicts */}
 
         <div className="card !p-5">
 
@@ -191,8 +241,6 @@ export default function Dashboard() {
 
         </div>
 
-        {/* Completed Actions */}
-
         <div className="card !p-5">
 
           <div className="flex items-center justify-between">
@@ -214,8 +262,6 @@ export default function Dashboard() {
 
         </div>
 
-        {/* Information Health */}
-
         <div className="card !p-5">
 
           <div className="flex items-center justify-between">
@@ -232,25 +278,20 @@ export default function Dashboard() {
           </div>
 
           <div className="text-4xl font-bold mt-3">
-            {informationHealth}
-            {typeof informationHealth === 'number'
-              ? '/100'
-              : ''}
+            {informationHealth}/100
           </div>
 
         </div>
 
       </div>
 
-      {/* =========================================
-          MAIN DASHBOARD AREA
-          ========================================= */}
+      {/* =====================================
+          MAIN AREA
+          ===================================== */}
 
       <div className="grid lg:grid-cols-2 gap-6">
 
-        {/* =======================================
-            ATTENTION
-            ======================================= */}
+        {/* ATTENTION */}
 
         <section className="card">
 
@@ -300,61 +341,66 @@ export default function Dashboard() {
 
               {attentionItems
                 .slice(0, 4)
-                .map((item, index) => {
+                .map(
+                  (item, index) => {
 
-                  const severity =
-                    item.severity ||
-                    'INFO'
+                    const severity =
+                      item.severity ||
+                      'INFO'
 
-                  const severityClass =
-                    severity === 'CRITICAL'
-                      ? 'text-red-600 bg-red-50 border-red-200'
-                      : severity === 'HIGH'
-                        ? 'text-orange-600 bg-orange-50 border-orange-200'
-                        : severity === 'MEDIUM'
-                          ? 'text-amber-600 bg-amber-50 border-amber-200'
-                          : 'text-blue-600 bg-blue-50 border-blue-200'
+                    const severityClass =
+                      severity ===
+                      'CRITICAL'
+                        ? 'text-red-600 bg-red-50 border-red-200'
+                        : severity ===
+                          'HIGH'
+                          ? 'text-orange-600 bg-orange-50 border-orange-200'
+                          : severity ===
+                            'MEDIUM'
+                            ? 'text-amber-600 bg-amber-50 border-amber-200'
+                            : 'text-blue-600 bg-blue-50 border-blue-200'
 
-                  return (
-                    <div
-                      key={
-                        item.id ||
-                        item.finding_id ||
-                        index
-                      }
-                      className="rounded-xl border border-slate-200 dark:border-slate-800 p-4"
-                    >
+                    return (
+                      <div
+                        key={
+                          item.id ||
+                          item.finding_id ||
+                          index
+                        }
+                        className="rounded-xl border border-slate-200 dark:border-slate-800 p-4"
+                      >
 
-                      <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3">
 
-                        <span
-                          className={`text-xs font-semibold px-2 py-1 rounded-md border ${severityClass}`}
-                        >
-                          {severity}
-                        </span>
+                          <span
+                            className={`text-xs font-semibold px-2 py-1 rounded-md border ${severityClass}`}
+                          >
+                            {severity}
+                          </span>
 
-                        <div className="min-w-0 flex-1">
+                          <div className="min-w-0 flex-1">
 
-                          <div className="font-semibold truncate">
-                            {item.title ||
-                              item.message ||
-                              item.description ||
-                              'Finding detected'}
-                          </div>
-
-                          {item.document_name && (
-                            <div className="mut text-xs mt-1">
-                              {item.document_name}
+                            <div className="font-semibold truncate">
+                              {item.title ||
+                                item.message ||
+                                item.description ||
+                                'Finding detected'}
                             </div>
-                          )}
+
+                            {item.document_name && (
+                              <div className="mut text-xs mt-1">
+                                {item.document_name}
+                              </div>
+                            )}
+
+                          </div>
 
                         </div>
 
                       </div>
-
-                    </div>
-                  )
-                })}
+                    )
+                  }
+                )}
 
             </div>
 
@@ -372,9 +418,7 @@ export default function Dashboard() {
 
         </section>
 
-        {/* =======================================
-            INFORMATION HEALTH
-            ======================================= */}
+        {/* INFORMATION HEALTH */}
 
         <section className="card">
 
@@ -430,12 +474,16 @@ export default function Dashboard() {
                   strokeDasharray="301.6"
                   strokeDashoffset={
                     301.6 -
-                    (Math.min(
-                      Number(informationHealth) || 0,
+                    (
+                      Math.min(
+                        Number(
+                          informationHealth
+                        ) || 0,
+                        100
+                      ) /
                       100
-                    ) /
-                      100) *
-                      301.6
+                    ) *
+                    301.6
                   }
                 />
 
@@ -475,31 +523,25 @@ export default function Dashboard() {
 
       </div>
 
-      {/* =========================================
+      {/* =====================================
           QUICK ACTIONS
-          ========================================= */}
+          ===================================== */}
 
       <section>
 
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4">
 
-          <div>
+          <h2 className="text-xl font-bold">
+            Quick actions
+          </h2>
 
-            <h2 className="text-xl font-bold">
-              Quick actions
-            </h2>
-
-            <p className="mut mt-1">
-              Continue working with your information.
-            </p>
-
-          </div>
+          <p className="mut mt-1">
+            Continue working with your information.
+          </p>
 
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-          {/* Documents */}
 
           <button
             className="card text-left hover:border-indigo-400 transition"
@@ -523,8 +565,6 @@ export default function Dashboard() {
 
           </button>
 
-          {/* Ask AI */}
-
           <button
             className="card text-left hover:border-indigo-400 transition"
             onClick={() =>
@@ -547,8 +587,6 @@ export default function Dashboard() {
 
           </button>
 
-          {/* Compare */}
-
           <button
             className="card text-left hover:border-indigo-400 transition"
             onClick={() =>
@@ -570,8 +608,6 @@ export default function Dashboard() {
             </div>
 
           </button>
-
-          {/* Actions */}
 
           <button
             className="card text-left hover:border-indigo-400 transition"
@@ -599,9 +635,9 @@ export default function Dashboard() {
 
       </section>
 
-      {/* =========================================
+      {/* =====================================
           RECENT ACTIVITY
-          ========================================= */}
+          ===================================== */}
 
       <section className="card">
 
