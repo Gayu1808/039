@@ -7,6 +7,25 @@
 .inp{@apply w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500}
 }
 body{@apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased font-sans}
+/* Dropdown readability */
+select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.dark select {
+  color-scheme: dark;
+}
+
+.dark select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.dark select option:checked {
+  background-color: #4f46e5;
+  color: #ffffff;
+}
 /* InfoMind custom themes */
 
 .theme-indigo {
