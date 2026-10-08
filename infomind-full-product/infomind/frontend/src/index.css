@@ -58,6 +58,29 @@ select option {
   background-color: #7c3aed;
   border-color: #7c3aed;
 }
+/* InfoMind Light/Dark Theme */
+
+html:not(.dark) body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+html:not(.dark) .card {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+
+html.dark .card {
+  background-color: #0f172a;
+  color: #f8fafc;
+  border-color: #1e293b;
+}
 
 .theme-rose .btn-p {
   background-color: #e11d48;
