@@ -1,12 +1,4 @@
-import { useMemo, useState } from 'react'
-import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Search,
-  Network
-} from 'lucide-react'
-
+import { useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -40,59 +32,99 @@ export default function Insights() {
   const [ins] = useData(() => api('/insights'))
   const [g] = useData(() => api('/graph'))
 
-  const [selected, setSelected] = useState(null)
-  const [search, setSearch] = useState('')
-  const [showConflicts, setShowConflicts] = useState(true)
+  const [sel, setSel] = useState(null)
   const [zoom, setZoom] = useState(1)
+  const [showConflicts, setShowConflicts] = useState(true)
+  const [search, setSearch] = useState('')
 
   if (!ins || !g) {
     return <Loading />
   }
 
-  const filteredNodes = useMemo(() => {
-    return g.nodes.filter(n =>
-      n.id.toLowerCase().includes(search.toLowerCase())
+  // Safety checks
+  const nodes = Array.isArray(g.nodes) ? g.nodes : []
+  const edges = Array.isArray(g.edges) ? g.edges : []
+
+  // No documents available
+  if (nodes.length === 0) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Connections
+        </h1>
+
+        <div className="card text-center py-16">
+          <div className="text-5xl mb-4">🔗</div>
+
+          <h2 className="text-xl font-semibold">
+            No document connections yet
+          </h2>
+
+          <p className="mut mt-2">
+            Upload or add more documents to see how they are
+            connected.
+          </p>
+        </div>
+      </div>
     )
-  }, [g.nodes, search])
+  }
 
-  const n = Math.max(g.nodes.length, 1)
+  const n = nodes.length
 
-  const pos = Object.fromEntries(
-    g.nodes.map((d, i) => [
+  const positions = Object.fromEntries(
+    nodes.map((d, i) => [
       d.id,
       [
-        180 + 130 * Math.cos((2 * Math.PI * i) / n - 1.57),
-        170 + 125 * Math.sin((2 * Math.PI * i) / n - 1.57)
+        180 +
+          130 *
+            Math.cos(
+              (2 * Math.PI * i) / n - 1.57
+            ),
+        170 +
+          125 *
+            Math.sin(
+              (2 * Math.PI * i) / n - 1.57
+            )
       ]
     ])
   )
 
-  const visibleEdges = g.edges.filter(e => {
-    if (!showConflicts && e.conflict) return false
+  const filteredNodes = nodes.filter(node =>
+    node.id.toLowerCase().includes(search.toLowerCase())
+  )
 
-    if (selected) {
-      return e.a === selected || e.b === selected
+  const filteredEdges = edges.filter(edge => {
+    if (!showConflicts && edge.conflict) {
+      return false
     }
 
-    return true
+    if (!search) {
+      return true
+    }
+
+    return (
+      edge.a.toLowerCase().includes(search.toLowerCase()) ||
+      edge.b.toLowerCase().includes(search.toLowerCase())
+    )
   })
 
-  const selectedConnections = selected
-    ? g.edges.filter(
-        e => e.a === selected || e.b === selected
+  const selectedLinks = sel
+    ? edges.filter(
+        e => e.a === sel || e.b === sel
       )
     : []
 
   return (
     <div className="space-y-6">
 
+      {/* HEADER */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">
-          Insights & Connections
+          Connections
         </h1>
 
         <p className="mut mt-1">
-          Explore relationships, versions and conflicts across your documents.
+          Explore how your documents are connected.
         </p>
       </div>
 
@@ -107,15 +139,26 @@ export default function Insights() {
           <div className="h-48">
             <ResponsiveContainer>
               <BarChart data={obj(ins.by_severity)}>
-                <XAxis dataKey="name" fontSize={11} />
-                <YAxis allowDecimals={false} fontSize={11} />
+                <XAxis
+                  dataKey="name"
+                  fontSize={11}
+                />
+
+                <YAxis
+                  allowDecimals={false}
+                  fontSize={11}
+                />
+
                 <Tooltip />
 
-                <Bar dataKey="value" radius={6}>
+                <Bar
+                  dataKey="value"
+                  radius={6}
+                >
                   {obj(ins.by_severity).map(d => (
                     <Cell
                       key={d.name}
-                      fill={COL[d.name]}
+                      fill={COL[d.name] || '#6366f1'}
                     />
                   ))}
                 </Bar>
@@ -132,8 +175,16 @@ export default function Insights() {
           <div className="h-48">
             <ResponsiveContainer>
               <BarChart data={obj(ins.by_kind)}>
-                <XAxis dataKey="name" fontSize={11} />
-                <YAxis allowDecimals={false} fontSize={11} />
+                <XAxis
+                  dataKey="name"
+                  fontSize={11}
+                />
+
+                <YAxis
+                  allowDecimals={false}
+                  fontSize={11}
+                />
+
                 <Tooltip />
 
                 <Bar
@@ -165,9 +216,12 @@ export default function Insights() {
                     <Cell
                       key={d.name}
                       fill={
-                        ['#4f46e5', '#0891b2', '#16a34a', '#dc2626'][
-                          i % 4
-                        ]
+                        [
+                          '#4f46e5',
+                          '#0891b2',
+                          '#16a34a',
+                          '#dc2626'
+                        ][i % 4]
                       }
                     />
                   ))}
@@ -178,91 +232,72 @@ export default function Insights() {
             </ResponsiveContainer>
           </div>
         </div>
-
       </div>
 
-      {/* GRAPH */}
+      {/* CONNECTION GRAPH */}
       <div className="card">
 
-        <div className="flex flex-wrap gap-3 items-center justify-between mb-5">
+        <div className="flex items-center gap-3 flex-wrap">
 
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
-              <Network size={22} />
-            </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold">
+              Document Connection Graph
+            </h2>
 
-            <div>
-              <h2 className="font-semibold text-lg">
-                Document Connection Graph
-              </h2>
-
-              <p className="mut">
-                {g.nodes.length} documents · {g.edges.length} connections
-              </p>
-            </div>
+            <p className="mut">
+              Select a document to explore its
+              relationships.
+            </p>
           </div>
 
-          <div className="flex gap-2">
+          <span className="text-sm px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300">
+            {nodes.length} documents
+          </span>
 
-            <button
-              className="btn"
-              onClick={() =>
-                setZoom(z => Math.min(z + 0.2, 2))
-              }
-              title="Zoom in"
-            >
-              <ZoomIn size={16} />
-            </button>
+          <span className="text-sm px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
+            {edges.length} connections
+          </span>
 
-            <button
-              className="btn"
-              onClick={() =>
-                setZoom(z => Math.max(z - 0.2, 0.6))
-              }
-              title="Zoom out"
-            >
-              <ZoomOut size={16} />
-            </button>
-
-            <button
-              className="btn"
-              onClick={() => {
-                setZoom(1)
-                setSelected(null)
-                setSearch('')
-              }}
-              title="Reset"
-            >
-              <RotateCcw size={16} />
-            </button>
-
-          </div>
         </div>
 
-        {/* SEARCH */}
-        <div className="flex flex-wrap gap-3 mb-4">
+        {/* CONTROLS */}
+        <div className="flex gap-2 flex-wrap mt-4">
 
-          <div className="relative flex-1 min-w-[220px]">
-            <Search
-              size={16}
-              className="absolute left-3 top-3 mut"
-            />
+          <input
+            className="inp max-w-xs"
+            placeholder="Search documents..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
 
-            <input
-              className="inp pl-9"
-              placeholder="Search documents..."
-              value={search}
-              onChange={e =>
-                setSearch(e.target.value)
-              }
-            />
-          </div>
+          <button
+            className="btn"
+            onClick={() =>
+              setZoom(z => Math.min(z + 0.2, 2))
+            }
+          >
+            +
+          </button>
+
+          <button
+            className="btn"
+            onClick={() =>
+              setZoom(z => Math.max(z - 0.2, 0.6))
+            }
+          >
+            −
+          </button>
+
+          <button
+            className="btn"
+            onClick={() => setZoom(1)}
+          >
+            Reset
+          </button>
 
           <button
             className={`btn ${
-              showConflicts
-                ? 'border-red-500 text-red-600'
-                : ''
+              showConflicts ? 'btn-p' : ''
             }`}
             onClick={() =>
               setShowConflicts(v => !v)
@@ -275,26 +310,35 @@ export default function Insights() {
 
         </div>
 
-        <div className="grid lg:grid-cols-[1fr_300px] gap-5">
+        {/* GRAPH */}
+        <div className="mt-5 grid lg:grid-cols-[420px_1fr] gap-6">
 
-          {/* SVG GRAPH */}
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 overflow-hidden">
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 overflow-hidden">
 
             <svg
               viewBox="0 0 360 340"
-              className="w-full h-[430px]"
+              className="w-full"
+              role="img"
+              aria-label="Document relationship graph"
             >
 
               <g
-                transform={`translate(180 170) scale(${zoom}) translate(-180 -170)`}
+                transform={`translate(${
+                  180 - 180 * zoom
+                } ${
+                  170 - 170 * zoom
+                }) scale(${zoom})`}
               >
 
-                {/* EDGES */}
-                {visibleEdges.map((e, i) => {
-                  const a = pos[e.a]
-                  const b = pos[e.b]
+                {/* CONNECTION LINES */}
+                {filteredEdges.map((e, i) => {
 
-                  if (!a || !b) return null
+                  const a = positions[e.a]
+                  const b = positions[e.b]
+
+                  if (!a || !b) {
+                    return null
+                  }
 
                   return (
                     <line
@@ -313,38 +357,38 @@ export default function Insights() {
                       }
                       strokeDasharray={
                         e.type === 'version'
-                          ? '6 4'
+                          ? '5 3'
                           : ''
-                      }
-                      opacity={
-                        selected &&
-                        e.a !== selected &&
-                        e.b !== selected
-                          ? 0.15
-                          : 0.8
                       }
                     />
                   )
                 })}
 
-                {/* NODES */}
-                {g.nodes.map(d => {
-                  const p = pos[d.id]
-                  const visible = filteredNodes.some(
-                    x => x.id === d.id
-                  )
+                {/* DOCUMENT NODES */}
+                {filteredNodes.map(d => {
 
-                  if (!visible) return null
+                  const p = positions[d.id]
 
-                  const active =
-                    selected === d.id
+                  if (!p) {
+                    return null
+                  }
+
+                  const selected =
+                    sel === d.id
 
                   return (
                     <g
                       key={d.id}
+                      tabIndex={0}
+                      role="button"
                       onClick={() =>
-                        setSelected(d.id)
+                        setSel(d.id)
                       }
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          setSel(d.id)
+                        }
+                      }}
                       className="cursor-pointer"
                     >
 
@@ -352,35 +396,30 @@ export default function Insights() {
                         cx={p[0]}
                         cy={p[1]}
                         r={
-                          active
-                            ? 21
-                            : d.findings
-                            ? 17
+                          d.findings
+                            ? 18
                             : 13
                         }
-                        fill={
-                          active
-                            ? '#4f46e5'
-                            : 'white'
+                        className={
+                          selected
+                            ? 'fill-indigo-600'
+                            : 'fill-white dark:fill-slate-900'
                         }
-                        stroke={
-                          d.findings
-                            ? '#dc2626'
-                            : '#4f46e5'
-                        }
+                        stroke="#6366f1"
                         strokeWidth="2.5"
                       />
 
                       <text
                         x={p[0]}
-                        y={p[1] + 31}
+                        y={p[1] + 32}
                         textAnchor="middle"
                         fontSize="9"
                         className="fill-current"
                       >
-                        {d.id
-                          .replace('.pdf', '')
-                          .slice(0, 18)}
+                        {d.id.replace(
+                          '.pdf',
+                          ''
+                        )}
                       </text>
 
                     </g>
@@ -394,78 +433,120 @@ export default function Insights() {
           </div>
 
           {/* DETAILS */}
-          <div className="space-y-4">
+          <div>
 
-            <div className="p-4 rounded-xl bg-indigo-50 dark:bg-indigo-950/40">
-              <div className="font-semibold mb-2">
-                Graph legend
-              </div>
+            {sel ? (
+              <div className="card">
 
-              <div className="text-sm space-y-2">
-                <div>🔵 Document</div>
-                <div>🔴 Conflict</div>
-                <div>━━ Shared entity</div>
-                <div>┄┄ Document version</div>
-              </div>
-            </div>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-semibold">
+                    Selected document
+                  </h3>
 
-            {selected ? (
-              <div>
-                <h3 className="font-semibold">
-                  Selected document
-                </h3>
-
-                <div className="mt-2 p-3 rounded-xl bg-slate-100 dark:bg-slate-800">
-                  {selected}
+                  <button
+                    className="btn"
+                    onClick={() =>
+                      setSel(null)
+                    }
+                  >
+                    Clear
+                  </button>
                 </div>
 
-                <h3 className="font-semibold mt-5">
-                  Connections
-                </h3>
+                <div className="mt-3 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950">
+                  <b>{sel}</b>
+                </div>
 
-                {selectedConnections.length ? (
-                  <div className="space-y-2 mt-2">
-                    {selectedConnections.map((e, i) => (
-                      <div
-                        key={i}
-                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-sm"
-                      >
-                        ↔ {e.a === selected ? e.b : e.a}
+                {selectedLinks.length > 0 ? (
+                  <div className="mt-4 space-y-3">
 
-                        <div className="mut mt-1">
-                          {e.type}
-                          {e.entity
-                            ? ` · ${e.entity}`
-                            : ''}
-                        </div>
+                    <div className="mut">
+                      Connected documents
+                    </div>
 
-                        {e.conflict && (
-                          <div className="text-red-600 text-xs mt-1 font-semibold">
-                            Conflict detected
+                    {selectedLinks.map(
+                      (e, i) => (
+                        <div
+                          key={i}
+                          className="p-3 rounded-xl border border-slate-200 dark:border-slate-800"
+                        >
+
+                          <div className="font-medium">
+                            ↔{' '}
+                            {e.a === sel
+                              ? e.b
+                              : e.a}
                           </div>
-                        )}
-                      </div>
-                    ))}
+
+                          <div className="mut mt-1">
+                            Relationship:{' '}
+                            {e.type}
+                          </div>
+
+                          {e.entity && (
+                            <div className="mut">
+                              Entity:{' '}
+                              {e.entity}
+                            </div>
+                          )}
+
+                          {e.conflict && (
+                            <div className="text-red-600 dark:text-red-400 font-semibold mt-1">
+                              ⚠ Conflict detected
+                            </div>
+                          )}
+
+                        </div>
+                      )
+                    )}
+
                   </div>
                 ) : (
-                  <p className="mut mt-2">
-                    No connections found.
+                  <p className="mut mt-4">
+                    No connections found for
+                    this document.
                   </p>
                 )}
 
               </div>
             ) : (
-              <div className="card !bg-slate-50 dark:!bg-slate-900">
-                <p className="mut">
-                  Select a document node to inspect
-                  its relationships and conflicts.
-                </p>
+              <div className="card">
+
+                <h3 className="font-semibold">
+                  How the graph works
+                </h3>
+
+                <div className="space-y-3 mt-4 text-sm">
+
+                  <p>
+                    🔵 <b>Solid line</b> — shared
+                    entity
+                  </p>
+
+                  <p>
+                    🔵 <b>Dashed line</b> —
+                    document version
+                  </p>
+
+                  <p>
+                    🔴 <b>Red line</b> — detected
+                    conflict
+                  </p>
+
+                  <p className="mut">
+                    Click any document node to
+                    see its relationships.
+                  </p>
+
+                </div>
+
               </div>
             )}
 
           </div>
 
         </div>
+
       </div>
 
     </div>
