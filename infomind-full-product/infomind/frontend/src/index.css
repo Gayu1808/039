@@ -384,3 +384,91 @@ select {
     border-color 0.25s ease,
     box-shadow 0.25s ease;
 }
+/* =========================================
+   FINAL LIGHT THEME FIX
+   ========================================= */
+
+/* User profile fields */
+html:not(.dark) .bg-slate-100 {
+  background: #f8fafc !important;
+  color: #172033 !important;
+}
+
+/* Team member cards */
+html:not(.dark) .bg-slate-800 {
+  background: #f8fafc !important;
+  color: #172033 !important;
+}
+
+/* Team member names */
+html:not(.dark) .bg-slate-800 .font-semibold {
+  color: #172033 !important;
+}
+
+/* Appearance theme buttons */
+html:not(.dark) button.bg-indigo-50 {
+  background: #eef2ff !important;
+  color: #4338ca !important;
+  border-color: #6366f1 !important;
+}
+
+/* Appearance Light selected card */
+html:not(.dark) button.bg-indigo-950 {
+  background: #eef2ff !important;
+  color: #4338ca !important;
+}
+
+/* Text inside selected Light card */
+html:not(.dark) button.bg-indigo-950 .font-semibold,
+html:not(.dark) button.bg-indigo-50 .font-semibold {
+  color: #4338ca !important;
+}
+
+/* Theme description */
+html:not(.dark) button.bg-indigo-50 .mut,
+html:not(.dark) button.bg-indigo-950 .mut {
+  color: #64748b !important;
+}
+
+/* Profile text */
+html:not(.dark) .bg-slate-100 .font-semibold {
+  color: #172033 !important;
+}
+
+/* Locked role */
+html:not(.dark) .bg-slate-100 .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* =========================================
+   TEAM CARDS - PROFESSIONAL LIGHT STYLE
+   ========================================= */
+
+html:not(.dark) .grid.md\:grid-cols-2 > div.bg-slate-800 {
+  background: linear-gradient(
+    135deg,
+    #f8fafc,
+    #eef2ff
+  ) !important;
+
+  border: 1px solid #e2e8f0;
+}
+
+/* Team number circles */
+html:not(.dark) .grid.md\:grid-cols-2 > div.bg-slate-800 .rounded-full {
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+/* =========================================
+   DARK MODE - KEEP ORIGINAL LOOK
+   ========================================= */
+
+html.dark .bg-slate-100 {
+  background: #1e293b !important;
+}
+
+html.dark .bg-slate-800 {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
