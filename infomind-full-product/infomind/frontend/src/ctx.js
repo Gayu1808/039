@@ -1,10 +1,61 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState
+} from 'react'
+
+import { api } from './api'
+
 export const Ctx = createContext(null)
-export const useApp = () => useContext(Ctx)
-// fetch + refetch whenever any action bumps the global tick (keeps dashboard numbers live)
-export function useData(fn, deps = []) {
-  const { tick } = useApp()
-  const [d, setD] = useState(null), [err, setErr] = useState(null)
-  useEffect(() => { let on = true; fn().then(x => on && setD(x)).catch(e => on && setErr(e.message)); return () => { on = false } }, [tick, ...deps])
-  return [d, err]
+
+export function useApp() {
+  return useContext(Ctx)
+}
+
+export function useData(loader, deps = []) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError('')
+
+      const result = await loader()
+
+      setData(result)
+    } catch (err) {
+      setError(
+        err?.message ||
+        'Unable to load data.'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }, deps)
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  return {
+    data,
+    loading,
+    error,
+    reload: load
+  }
+}
+
+export function AppProvider({
+  children,
+  value
+}) {
+  return (
+    <Ctx.Provider value={value}>
+      {children}
+    </Ctx.Provider>
+  )
 }
