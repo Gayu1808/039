@@ -1,70 +1,123 @@
-import { useState } from 'react'
-import {
-  Sun,
-  Moon,
-  Palette,
-  User,
-  ShieldCheck,
-  Users,
-  Sparkles
-} from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { User, Sun, Moon, Palette, Shield, Users, Info } from 'lucide-react'
+import { useApp } from '../ctx'
 
-const themes = [
-  { id: 'light', name: 'Light', icon: Sun },
-  { id: 'dark', name: 'Dark', icon: Moon },
-  { id: 'indigo', name: 'Indigo', icon: Palette },
-  { id: 'emerald', name: 'Emerald', icon: Palette },
-  { id: 'violet', name: 'Violet', icon: Palette },
-  { id: 'rose', name: 'Rose', icon: Palette }
-]
-
-const team = [
+const TEAM = [
   'Gayathri K T',
-  'Darshan S',
-  'Dharshini S',
-  'Miruthula M'
+  'Mithun Raj M',
+  'Moneshwaran R',
+  'Mokkul'
 ]
+
+const THEMES = [
+  {
+    id: 'light',
+    name: 'Light',
+    description: 'Clean and bright interface',
+    icon: Sun
+  },
+  {
+    id: 'dark',
+    name: 'Dark',
+    description: 'Dark interface for low-light use',
+    icon: Moon
+  },
+  {
+    id: 'indigo',
+    name: 'Indigo',
+    description: 'Professional indigo theme',
+    icon: Palette
+  },
+  {
+    id: 'emerald',
+    name: 'Emerald',
+    description: 'Fresh green theme',
+    icon: Palette
+  },
+  {
+    id: 'violet',
+    name: 'Violet',
+    description: 'Modern violet theme',
+    icon: Palette
+  },
+  {
+    id: 'rose',
+    name: 'Rose',
+    description: 'Warm rose theme',
+    icon: Palette
+  }
+]
+
+function applyTheme(theme) {
+  const root = document.documentElement
+
+  root.classList.remove(
+    'dark',
+    'theme-indigo',
+    'theme-emerald',
+    'theme-violet',
+    'theme-rose'
+  )
+
+  if (theme === 'dark') {
+    root.classList.add('dark')
+  } else if (theme !== 'light') {
+    root.classList.add(`theme-${theme}`)
+  }
+
+  localStorage.setItem(
+    'infomind-theme',
+    theme
+  )
+}
 
 export default function Settings() {
+  const { me } = useApp()
+
   const [theme, setTheme] = useState(
-    localStorage.getItem('infomind-theme') || 'light'
+    () =>
+      localStorage.getItem(
+        'infomind-theme'
+      ) || 'light'
   )
 
-  const [confidence, setConfidence] = useState(
-    Number(localStorage.getItem('ai-confidence') || 70)
-  )
-
-  function applyTheme(id) {
-    setTheme(id)
-    localStorage.setItem('infomind-theme', id)
-
-    document.documentElement.classList.remove(
-      'dark',
-      'theme-indigo',
-      'theme-emerald',
-      'theme-violet',
-      'theme-rose'
+  const [confidence, setConfidence] =
+    useState(
+      () =>
+        Number(
+          localStorage.getItem(
+            'infomind-confidence'
+          )
+        ) || 80
     )
 
-    if (id === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else if (id !== 'light') {
-      document.documentElement.classList.add(`theme-${id}`)
-    }
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  function changeTheme(value) {
+    setTheme(value)
+    applyTheme(value)
   }
 
   function changeConfidence(value) {
     setConfidence(value)
-    localStorage.setItem('ai-confidence', value)
+
+    localStorage.setItem(
+      'infomind-confidence',
+      value
+    )
   }
 
   return (
     <div className="space-y-6">
 
+      {/* HEADER */}
       <div>
-        <h1 className="text-3xl font-bold">
+        <h1 className="text-3xl font-bold tracking-tight">
           Settings
         </h1>
+
         <p className="mut mt-1">
           Customize your InfoMind AI workspace.
         </p>
@@ -72,139 +125,200 @@ export default function Settings() {
 
       {/* PROFILE */}
       <section className="card">
+
         <div className="flex items-center gap-3 mb-5">
-          <User size={22} className="text-indigo-600" />
+
+          <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+            <User size={23} />
+          </div>
+
           <div>
-            <h2 className="font-semibold text-lg">
+            <h2 className="text-lg font-semibold">
               User Profile
             </h2>
+
             <p className="mut">
-              Account and access information
+              Your current InfoMind account
             </p>
           </div>
+
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-600 to-cyan-400 text-white grid place-items-center text-xl font-bold">
-            IM
+        <div className="grid md:grid-cols-2 gap-4">
+
+          <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
+            <div className="mut">
+              Name
+            </div>
+
+            <div className="font-semibold mt-1">
+              {me?.name || 'User'}
+            </div>
           </div>
 
-          <div>
-            <h3 className="font-semibold text-lg">
-              InfoMind User
-            </h3>
-            <p className="mut">
-              AI document intelligence workspace
-            </p>
+          <div className="rounded-xl bg-slate-100 dark:bg-slate-800 p-4">
+            <div className="mut">
+              Role
+            </div>
+
+            <div className="font-semibold mt-1 capitalize">
+              {me?.role || 'User'}
+            </div>
           </div>
+
         </div>
+
       </section>
 
       {/* APPEARANCE */}
       <section className="card">
+
         <div className="flex items-center gap-3 mb-5">
-          <Palette size={22} className="text-indigo-600" />
+
+          <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+            <Palette size={23} />
+          </div>
+
           <div>
-            <h2 className="font-semibold text-lg">
+            <h2 className="text-lg font-semibold">
               Appearance
             </h2>
+
             <p className="mut">
-              Choose light, dark or custom theme
+              Choose the look and feel of InfoMind.
             </p>
           </div>
+
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {themes.map(({ id, name, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => applyTheme(id)}
-              className={`p-4 rounded-xl border text-left transition ${
-                theme === id
-                  ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-950'
-                  : 'border-slate-200 dark:border-slate-700 hover:border-indigo-400'
-              }`}
-            >
-              <Icon size={20} className="mb-2" />
-              <div className="font-medium">
-                {name}
-              </div>
-            </button>
-          ))}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+
+          {THEMES.map(item => {
+
+            const Icon = item.icon
+
+            return (
+              <button
+                key={item.id}
+                onClick={() =>
+                  changeTheme(item.id)
+                }
+                className={`text-left rounded-xl border p-4 transition ${
+                  theme === item.id
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950'
+                    : 'border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                }`}
+              >
+
+                <div className="flex items-center gap-3">
+
+                  <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 grid place-items-center">
+                    <Icon size={18} />
+                  </div>
+
+                  <div>
+                    <div className="font-semibold">
+                      {item.name}
+                    </div>
+
+                    <div className="mut text-xs">
+                      {item.description}
+                    </div>
+                  </div>
+
+                </div>
+
+              </button>
+            )
+          })}
+
         </div>
+
       </section>
 
-      {/* AI */}
+      {/* AI SETTINGS */}
       <section className="card">
+
         <div className="flex items-center gap-3 mb-5">
-          <Sparkles size={22} className="text-indigo-600" />
+
+          <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+            <Shield size={23} />
+          </div>
 
           <div>
-            <h2 className="font-semibold text-lg">
-              AI Analysis
+            <h2 className="text-lg font-semibold">
+              AI Confidence
             </h2>
 
             <p className="mut">
-              Control the minimum confidence displayed for AI findings.
+              Set the minimum confidence level
+              shown in the interface.
             </p>
           </div>
+
         </div>
 
         <div className="max-w-xl">
-          <div className="flex justify-between mb-2">
+
+          <div className="flex items-center justify-between mb-2">
+
             <span className="text-sm font-medium">
               Confidence threshold
             </span>
 
-            <span className="text-sm font-bold text-indigo-600">
+            <span className="font-bold text-indigo-600">
               {confidence}%
             </span>
+
           </div>
 
           <input
             type="range"
             min="50"
             max="100"
+            step="5"
             value={confidence}
-            onChange={e =>
-              changeConfidence(Number(e.target.value))
+            onChange={event =>
+              changeConfidence(
+                Number(event.target.value)
+              )
             }
-            className="w-full"
+            className="w-full accent-indigo-600"
           />
 
-          <p className="mut mt-2">
-            Higher values show only higher-confidence AI findings.
-          </p>
-        </div>
-      </section>
-
-      {/* SECURITY */}
-      <section className="card">
-        <div className="flex items-center gap-3">
-          <ShieldCheck
-            size={22}
-            className="text-emerald-600"
-          />
-
-          <div>
-            <h2 className="font-semibold text-lg">
-              Security
-            </h2>
-
-            <p className="mut">
-              Authentication and role-based access are enabled.
-            </p>
+          <div className="flex justify-between mut text-xs mt-1">
+            <span>50%</span>
+            <span>100%</span>
           </div>
+
         </div>
+
+        <div className="mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 p-4 text-sm">
+
+          <b>Note:</b>
+
+          <span className="mut ml-1">
+            This setting controls the confidence
+            threshold displayed by the interface.
+            It does not retrain or change the
+            underlying AI model.
+          </span>
+
+        </div>
+
       </section>
 
       {/* TEAM */}
       <section className="card">
+
         <div className="flex items-center gap-3 mb-5">
-          <Users size={22} className="text-indigo-600" />
+
+          <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+            <Users size={23} />
+          </div>
 
           <div>
-            <h2 className="font-semibold text-lg">
+            <h2 className="text-lg font-semibold">
               Our Team
             </h2>
 
@@ -212,42 +326,72 @@ export default function Settings() {
               InfoMind AI development team
             </p>
           </div>
+
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3">
-          {team.map((name, index) => (
+        <div className="grid md:grid-cols-2 gap-4">
+
+          {TEAM.map((name, index) => (
+
             <div
               key={name}
-              className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800"
+              className="flex items-center gap-4 rounded-xl bg-slate-100 dark:bg-slate-800 p-4"
             >
-              <div className="w-10 h-10 rounded-full bg-indigo-600 text-white grid place-items-center font-semibold">
+
+              <div className="w-12 h-12 rounded-full bg-indigo-600 text-white grid place-items-center font-bold text-lg shrink-0">
                 {index + 1}
               </div>
 
-              <span className="font-medium">
+              <div className="font-semibold text-lg">
                 {name}
-              </span>
+              </div>
+
             </div>
+
           ))}
+
         </div>
+
       </section>
 
       {/* ABOUT */}
       <section className="card">
-        <h2 className="font-semibold text-lg">
-          About InfoMind AI
-        </h2>
 
-        <p className="mut mt-2 leading-6">
-          InfoMind AI helps organizations understand,
-          connect and act on information by detecting
-          important changes, conflicts and relationships
-          across documents.
+        <div className="flex items-center gap-3 mb-4">
+
+          <div className="w-11 h-11 rounded-xl bg-indigo-100 dark:bg-indigo-950 text-indigo-600 grid place-items-center">
+            <Info size={23} />
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold">
+              About InfoMind AI
+            </h2>
+
+            <p className="mut">
+              Understand. Connect. Act.
+            </p>
+          </div>
+
+        </div>
+
+        <p className="mut leading-6">
+          InfoMind AI is an intelligent document
+          intelligence platform designed to analyze,
+          connect, compare and monitor important
+          information across documents.
         </p>
 
-        <div className="mt-4 inline-flex px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 text-sm">
-          AI Document Intelligence
+        <div className="mt-4 text-sm">
+          <span className="mut">
+            Version
+          </span>
+
+          <span className="font-semibold ml-2">
+            1.0
+          </span>
         </div>
+
       </section>
 
     </div>
