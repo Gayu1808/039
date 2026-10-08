@@ -2,345 +2,125 @@
 @tailwind components;
 @tailwind utilities;
 
-/* =========================================
-   INFOMIND AI - BASE STYLES
-   ========================================= */
-
 @layer components {
+
   .card {
     @apply bg-white dark:bg-slate-900
-      border border-slate-200 dark:border-slate-800
-      rounded-2xl p-5 shadow-sm;
+    border border-slate-200 dark:border-slate-800
+    rounded-2xl p-5 shadow-sm;
   }
 
   .btn {
     @apply px-3 py-1.5 rounded-lg
-      border border-slate-300 dark:border-slate-700
-      text-sm hover:border-indigo-500
-      transition
-      focus-visible:outline
-      focus-visible:outline-2
-      focus-visible:outline-indigo-500
-      disabled:opacity-40;
+    border border-slate-300 dark:border-slate-700
+    text-sm
+    hover:border-indigo-500
+    transition
+    focus-visible:outline
+    focus-visible:outline-2
+    focus-visible:outline-indigo-500
+    disabled:opacity-40
+    disabled:cursor-not-allowed;
   }
 
   .btn-p {
     @apply bg-indigo-600
-      text-white
-      border-indigo-600
-      hover:bg-indigo-500;
+    text-white
+    border-indigo-600
+    hover:bg-indigo-500;
   }
 
   .mut {
-    @apply text-sm text-slate-500 dark:text-slate-400;
+    @apply text-sm
+    text-slate-500
+    dark:text-slate-400;
   }
 
   .inp {
-    @apply w-full px-3 py-2
-      rounded-lg
-      border border-slate-300 dark:border-slate-700
-      bg-transparent
-      focus-visible:outline
-      focus-visible:outline-2
-      focus-visible:outline-indigo-500;
+    @apply w-full
+    px-3 py-2
+    rounded-lg
+    border border-slate-300
+    dark:border-slate-700
+    bg-white
+    dark:bg-slate-900
+    text-slate-900
+    dark:text-slate-100
+    focus-visible:outline
+    focus-visible:outline-2
+    focus-visible:outline-indigo-500;
   }
 }
 
-/* =========================================
-   BODY
-   ========================================= */
+/* --------------------------------------------------
+   GLOBAL
+-------------------------------------------------- */
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   @apply bg-slate-50
-    dark:bg-slate-950
-    text-slate-900
-    dark:text-slate-100
-    antialiased
-    font-sans;
+  dark:bg-slate-950
+  text-slate-900
+  dark:text-slate-100
+  antialiased
+  font-sans;
 }
 
-/* =========================================
-   LIGHT THEME
-   ========================================= */
-
-html:not(.dark) body {
-  background: #f5f7fb;
-  color: #172033;
+button,
+input,
+textarea,
+select {
+  font: inherit;
 }
 
-/* Main content */
+button {
+  cursor: pointer;
+}
 
-html:not(.dark) main {
+::selection {
+  background: #c7d2fe;
+  color: #312e81;
+}
+
+/* --------------------------------------------------
+   SCROLLBAR
+-------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
-/* =========================================
-   LIGHT CARDS
-   ========================================= */
-
-html:not(.dark) .card {
-  background: #ffffff;
-  color: #172033;
-  border-color: #e2e8f0;
-
-  box-shadow:
-    0 4px 16px rgba(15, 23, 42, 0.05);
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
 }
 
-/* =========================================
-   LIGHT INPUTS
-   ========================================= */
-
-html:not(.dark) .inp {
-  background: #ffffff;
-  color: #172033;
-  border-color: #cbd5e1;
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-html:not(.dark) .inp:focus {
-  border-color: #6366f1;
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
 
-/* =========================================
-   LIGHT PRIMARY BUTTON
-   ========================================= */
-
-html:not(.dark) .btn-p {
-  background: #4f46e5;
-  border-color: #4f46e5;
-  color: #ffffff;
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
-html:not(.dark) .btn-p:hover {
-  background: #4338ca;
-  border-color: #4338ca;
-}
-
-/* =========================================
-   LIGHT SIDEBAR
-   ========================================= */
-
-html:not(.dark) aside {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #172033;
-}
-
-/* Sidebar navigation */
-
-html:not(.dark) aside button {
-  color: #64748b;
-}
-
-/* Sidebar hover */
-
-html:not(.dark) aside button:hover {
-  background: #f1f5ff;
-  color: #4f46e5;
-}
-
-/* =========================================
-   ACTIVE SIDEBAR ITEM
-   ========================================= */
-
-/*
-   App.jsx currently gives the active button:
-   bg-indigo-50
-*/
-
-html:not(.dark) aside button.bg-indigo-50 {
-  background: linear-gradient(
-    135deg,
-    #eef2ff,
-    #e0e7ff
-  ) !important;
-
-  color: #4338ca !important;
-
-  font-weight: 600;
-}
-
-/* =========================================
-   LIGHT SIDEBAR PROFILE
-   ========================================= */
-
-html:not(.dark) aside .card {
-  background: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #172033;
-
-  box-shadow:
-    0 4px 14px rgba(15, 23, 42, 0.06);
-}
-
-/* Sidebar divider */
-
-html:not(.dark) aside .h-px {
-  background: #e2e8f0;
-}
-
-/* =========================================
-   LIGHT HEADER
-   ========================================= */
-
-html:not(.dark) header {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border-color: #e2e8f0 !important;
-}
-
-/* Search bar */
-
-html:not(.dark) header button {
-  background: #f1f5f9;
-  color: #64748b;
-}
-
-html:not(.dark) header button:hover {
-  background: #eef2ff;
-  color: #4f46e5;
-}
-
-/* =========================================
-   LIGHT TEXT
-   ========================================= */
-
-html:not(.dark) .mut {
-  color: #64748b;
-}
-
-/* =========================================
-   DARK THEME
-   ========================================= */
-
-html.dark body {
-  background: #020617;
-  color: #f8fafc;
-}
-
-/* Dark cards */
-
-html.dark .card {
-  background: #0f172a;
-  color: #f8fafc;
-  border-color: #1e293b;
-
-  box-shadow:
-    0 8px 25px rgba(0, 0, 0, 0.2);
-}
-
-/* Dark buttons */
-
-html.dark .btn-p {
-  background: #6366f1;
-  border-color: #6366f1;
-  color: #ffffff;
-}
-
-html.dark .btn-p:hover {
-  background: #818cf8;
-}
-
-/* Dark inputs */
-
-html.dark .inp {
-  background: #0f172a;
-  color: #f8fafc;
-  border-color: #334155;
-}
-
-/* Dark sidebar */
-
-html.dark aside {
-  background: #0b1120 !important;
-  border-color: #1e293b !important;
-}
-
-/* Dark sidebar text */
-
-html.dark aside button {
-  color: #94a3b8;
-}
-
-html.dark aside button:hover {
-  background: #172033;
-  color: #e2e8f0;
-}
-
-/* Dark active item */
-
-html.dark aside button.bg-indigo-50 {
-  background: linear-gradient(
-    135deg,
-    #312e81,
-    #4338ca
-  ) !important;
-
-  color: #ffffff !important;
-}
-
-/* Dark profile */
-
-html.dark aside .card {
-  background: #111827 !important;
-  border-color: #26334a !important;
-}
-
-/* =========================================
-   CUSTOM THEMES
-   ========================================= */
-
-.theme-indigo .btn-p {
-  background: #4f46e5;
-  border-color: #4f46e5;
-}
-
-.theme-indigo aside button.bg-indigo-50 {
-  background: #eef2ff !important;
-  color: #4338ca !important;
-}
-
-/* Emerald */
-
-.theme-emerald .btn-p {
-  background: #059669;
-  border-color: #059669;
-}
-
-.theme-emerald aside button.bg-indigo-50 {
-  background: #ecfdf5 !important;
-  color: #047857 !important;
-}
-
-/* Violet */
-
-.theme-violet .btn-p {
-  background: #7c3aed;
-  border-color: #7c3aed;
-}
-
-.theme-violet aside button.bg-indigo-50 {
-  background: #f5f3ff !important;
-  color: #6d28d9 !important;
-}
-
-/* Rose */
-
-.theme-rose .btn-p {
-  background: #e11d48;
-  border-color: #e11d48;
-}
-
-.theme-rose aside button.bg-indigo-50 {
-  background: #fff1f2 !important;
-  color: #be123c !important;
-}
-
-/* =========================================
-   DROPDOWN READABILITY
-   ========================================= */
+/* --------------------------------------------------
+   SELECT / DROPDOWN READABILITY
+-------------------------------------------------- */
 
 select option {
-  background: #ffffff;
+  background-color: #ffffff;
   color: #0f172a;
 }
 
@@ -349,126 +129,139 @@ select option {
 }
 
 .dark select option {
-  background: #0f172a;
+  background-color: #0f172a;
   color: #f8fafc;
 }
 
 .dark select option:checked {
-  background: #4f46e5;
+  background-color: #4f46e5;
   color: #ffffff;
 }
 
-/* =========================================
-   MOBILE BOTTOM NAV
-   ========================================= */
+/* --------------------------------------------------
+   THEME — INDIGO
+-------------------------------------------------- */
 
-html:not(.dark) nav {
-  background: #ffffff;
-  border-color: #e2e8f0;
-}
-
-/* =========================================
-   SMOOTH TRANSITIONS
-   ========================================= */
-
-body,
-.card,
-aside,
-header,
-button,
-input,
-select {
-  transition:
-    background-color 0.25s ease,
-    color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
-}
-/* =========================================
-   FINAL LIGHT THEME FIX
-   ========================================= */
-
-/* User profile fields */
-html:not(.dark) .bg-slate-100 {
-  background: #f8fafc !important;
-  color: #172033 !important;
-}
-
-/* Team member cards */
-html:not(.dark) .bg-slate-800 {
-  background: #f8fafc !important;
-  color: #172033 !important;
-}
-
-/* Team member names */
-html:not(.dark) .bg-slate-800 .font-semibold {
-  color: #172033 !important;
-}
-
-/* Appearance theme buttons */
-html:not(.dark) button.bg-indigo-50 {
+html.theme-indigo button.bg-indigo-50 {
   background: #eef2ff !important;
-  color: #4338ca !important;
   border-color: #6366f1 !important;
-}
-
-/* Appearance Light selected card */
-html:not(.dark) button.bg-indigo-950 {
-  background: #eef2ff !important;
   color: #4338ca !important;
 }
 
-/* Text inside selected Light card */
-html:not(.dark) button.bg-indigo-950 .font-semibold,
-html:not(.dark) button.bg-indigo-50 .font-semibold {
+html.theme-indigo
+button.bg-indigo-50
+.font-semibold {
   color: #4338ca !important;
 }
 
-/* Theme description */
-html:not(.dark) button.bg-indigo-50 .mut,
-html:not(.dark) button.bg-indigo-950 .mut {
-  color: #64748b !important;
-}
-
-/* Profile text */
-html:not(.dark) .bg-slate-100 .font-semibold {
-  color: #172033 !important;
-}
-
-/* Locked role */
-html:not(.dark) .bg-slate-100 .text-slate-500 {
-  color: #64748b !important;
-}
-
-/* =========================================
-   TEAM CARDS - PROFESSIONAL LIGHT STYLE
-   ========================================= */
-
-html:not(.dark) .grid.md\:grid-cols-2 > div.bg-slate-800 {
-  background: linear-gradient(
-    135deg,
-    #f8fafc,
-    #eef2ff
-  ) !important;
-
-  border: 1px solid #e2e8f0;
-}
-
-/* Team number circles */
-html:not(.dark) .grid.md\:grid-cols-2 > div.bg-slate-800 .rounded-full {
+html.theme-indigo .btn-p {
   background: #4f46e5 !important;
-  color: #ffffff !important;
+  border-color: #4f46e5 !important;
 }
 
-/* =========================================
-   DARK MODE - KEEP ORIGINAL LOOK
-   ========================================= */
+/* --------------------------------------------------
+   THEME — EMERALD
+-------------------------------------------------- */
 
-html.dark .bg-slate-100 {
-  background: #1e293b !important;
+html.theme-emerald button.bg-indigo-50 {
+  background: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  color: #047857 !important;
 }
 
-html.dark .bg-slate-800 {
-  background: #1e293b !important;
-  color: #f8fafc !important;
+html.theme-emerald
+button.bg-indigo-50
+.font-semibold {
+  color: #047857 !important;
+}
+
+html.theme-emerald .btn-p {
+  background: #059669 !important;
+  border-color: #059669 !important;
+}
+
+/* --------------------------------------------------
+   THEME — VIOLET
+-------------------------------------------------- */
+
+html.theme-violet button.bg-indigo-50 {
+  background: #f5f3ff !important;
+  border-color: #8b5cf6 !important;
+  color: #6d28d9 !important;
+}
+
+html.theme-violet
+button.bg-indigo-50
+.font-semibold {
+  color: #6d28d9 !important;
+}
+
+html.theme-violet .btn-p {
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+}
+
+/* --------------------------------------------------
+   THEME — ROSE
+-------------------------------------------------- */
+
+html.theme-rose button.bg-indigo-50 {
+  background: #fff1f2 !important;
+  border-color: #f43f5e !important;
+  color: #be123c !important;
+}
+
+html.theme-rose
+button.bg-indigo-50
+.font-semibold {
+  color: #be123c !important;
+}
+
+html.theme-rose .btn-p {
+  background: #e11d48 !important;
+  border-color: #e11d48 !important;
+}
+
+/* --------------------------------------------------
+   THEME — EMERALD / VIOLET / ROSE BUTTON HOVER
+-------------------------------------------------- */
+
+html.theme-emerald .btn-p:hover {
+  background: #047857 !important;
+}
+
+html.theme-violet .btn-p:hover {
+  background: #6d28d9 !important;
+}
+
+html.theme-rose .btn-p:hover {
+  background: #be123c !important;
+}
+
+/* --------------------------------------------------
+   FOCUS
+-------------------------------------------------- */
+
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------
+   MOBILE
+-------------------------------------------------- */
+
+@media (max-width: 640px) {
+
+  .card {
+    @apply p-4 rounded-xl;
+  }
+
+  h1 {
+    letter-spacing: -0.025em;
+  }
+
 }
