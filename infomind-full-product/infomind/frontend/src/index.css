@@ -265,3 +265,69 @@ select:focus-visible {
   }
 
 }
+
+/* Theme selection cards */
+html.theme-emerald .card .bg-slate-50,
+html.theme-emerald .card .bg-slate-100 {
+  color: #064e3b;
+}
+
+html.theme-emerald .card .text-slate-500 {
+  color: #64748b;
+}
+
+html.theme-emerald .card .text-emerald-700 {
+  color: #047857;
+}
+
+/* Make security statistics readable in light themes */
+html:not(.dark) .card .bg-slate-50,
+html:not(.dark) .card .bg-slate-100 {
+  color: #0f172a;
+}
+
+html:not(.dark) .card .bg-emerald-50 {
+  color: #065f46;
+}
+
+/* Theme-specific primary buttons */
+html.theme-indigo .btn-p {
+  background: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+  color: #ffffff !important;
+}
+
+html.theme-emerald .btn-p {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+html.theme-violet .btn-p {
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+  color: #ffffff !important;
+}
+
+html.theme-rose .btn-p {
+  background: #e11d48 !important;
+  border-color: #e11d48 !important;
+  color: #ffffff !important;
+}
+
+/* Consistent focus indicators */
+html.theme-emerald button:focus-visible,
+html.theme-emerald input:focus-visible {
+  outline-color: #059669;
+}
+
+html.theme-violet button:focus-visible,
+html.theme-violet input:focus-visible {
+  outline-color: #7c3aed;
+}
+
+html.theme-rose button:focus-visible,
+html.theme-rose input:focus-visible {
+  outline-color: #e11d48;
+}
+
