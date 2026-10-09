@@ -18,8 +18,10 @@ import { Sev, Empty, Loading } from '../components'
 export default function Documents() {
   const { can, bump, toast, nav, me } = useApp()
 
-  const [docs] = useData(() => api('/documents'))
-  const [findings] = useData(() => api('/findings'))
+  
+const { data: docs } = useData(() => api('/documents'))
+const { data: findings } = useData(() => api('/findings'))
+
 
   const fileRef = useRef(null)
 
