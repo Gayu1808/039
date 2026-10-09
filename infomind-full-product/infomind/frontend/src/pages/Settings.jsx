@@ -104,31 +104,33 @@ export default function Settings() {
     }
   }, [])
 
-  function saveName() {
-    const cleanName = name.trim()
+  
+function saveName() {
+  const cleanName = name.trim()
 
-    if (!cleanName) {
-      toast('Please enter your name.')
-      return
-    }
-
-    localStorage.setItem(
-      'infomind-display-name',
-      cleanName
-    )
-
-    window.dispatchEvent(
-      new Event('infomind-name-updated')
-    )
-
-    setSaved(true)
-
-    toast('Name updated successfully.')
-
-    setTimeout(() => {
-      setSaved(false)
-    }, 1800)
+  if (!cleanName) {
+    toast('Please enter your name.')
+    return
   }
+
+  localStorage.setItem('infomind-display-name', cleanName)
+
+  // Update the app immediately.
+  window.dispatchEvent(
+    new CustomEvent('infomind-name-updated', {
+      detail: { name: cleanName }
+    })
+  )
+
+  setName(cleanName)
+  setSaved(true)
+  toast('Display name updated successfully.')
+
+  window.setTimeout(() => {
+    setSaved(false)
+  }, 1800)
+}
+
 
   function changeTheme(value) {
     setTheme(value)
