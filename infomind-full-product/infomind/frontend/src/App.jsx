@@ -58,12 +58,31 @@ export default function App() {
   )
 
   // Keep the sidebar synchronized with Settings.
-  useEffect(() => {
-    const updateDisplayName = () => {
-      setDisplayName(
-        localStorage.getItem('infomind-display-name') || ''
-      )
-    }
+  
+useEffect(() => {
+  const updateDisplayName = event => {
+    const nameFromEvent = event?.detail?.name
+
+    setDisplayName(
+      nameFromEvent ||
+      localStorage.getItem('infomind-display-name') ||
+      ''
+    )
+  }
+
+  window.addEventListener(
+    'infomind-name-updated',
+    updateDisplayName
+  )
+
+  return () => {
+    window.removeEventListener(
+      'infomind-name-updated',
+      updateDisplayName
+    )
+  }
+}, [])
+
 
     window.addEventListener(
       'infomind-name-updated',
