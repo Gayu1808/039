@@ -1,3 +1,4 @@
+
 import {
   createContext,
   useCallback,
@@ -5,8 +6,6 @@ import {
   useEffect,
   useState
 } from 'react'
-
-import { api } from './api'
 
 export const Ctx = createContext(null)
 
@@ -25,12 +24,10 @@ export function useData(loader, deps = []) {
       setError('')
 
       const result = await loader()
-
       setData(result)
     } catch (err) {
       setError(
-        err?.message ||
-        'Unable to load data.'
+        err?.message || 'Unable to load data.'
       )
     } finally {
       setLoading(false)
@@ -49,10 +46,7 @@ export function useData(loader, deps = []) {
   }
 }
 
-export function AppProvider({
-  children,
-  value
-}) {
+export function AppProvider({ children, value }) {
   return (
     <Ctx.Provider value={value}>
       {children}
