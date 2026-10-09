@@ -143,13 +143,14 @@ export default function Compare() {
     setResult(null)
 
     try {
-      const response = await api('/compare', {
-        method: 'POST',
-        body: {
-          document_id_1: leftId,
-          document_id_2: rightId
-        }
-      })
+      
+const response = await api('/compare', {
+  params: {
+    a: leftDocument?.name,
+    b: rightDocument?.name
+  }
+})
+
 
       setResult(response)
     } catch (error) {
