@@ -215,7 +215,7 @@ export default function App() {
   }
 
   return (
-    <Ctx.jsx.jsx.jsx.jsx.Provider
+    <<Ctx.Provider
       value={{
         me,
         can,
@@ -443,7 +443,7 @@ export default function App() {
           </div>
         </div>
       )}
-    </Ctx.jsx.jsx.jsx.jsx.Provider>
+    </Ctx.Provider>
   )
 }
 
