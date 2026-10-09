@@ -215,7 +215,7 @@ export default function App() {
   }
 
   return (
-    <<Ctx.Provider
+    <Ctx.Provider
       value={{
         me,
         can,
