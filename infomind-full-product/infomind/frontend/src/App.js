@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 import { api, hasToken, setToken } from './api'
-import { Ctx, useData } from './ctx.js'
+import { Ctx, useData } from './ctx.jsx'
 
 
 import Login from './pages/Login'
