@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 import { api, hasToken, setToken } from './api'
-import { Ctx, useData } from './ctx.jsx'
+import { Ctx, useData } from './Ctx.jsx'
 
 
 import Login from './pages/Login'
@@ -215,7 +215,7 @@ export default function App() {
   }
 
   return (
-    <ctx.jsx.jsx.jsx.jsx.Provider
+    <Ctx.jsx.jsx.jsx.jsx.Provider
       value={{
         me,
         can,
@@ -443,7 +443,7 @@ export default function App() {
           </div>
         </div>
       )}
-    </ctx.jsx.jsx.jsx.jsx.Provider>
+    </Ctx.jsx.jsx.jsx.jsx.Provider>
   )
 }
 
